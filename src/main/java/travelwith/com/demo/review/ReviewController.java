@@ -20,11 +20,11 @@ public class ReviewController {
 
 	@PostMapping("/reviewView")
 	@ResponseBody
-	public Map<String, Object> reviewView() {
+	public Map<String, Object> reviewView(@RequestBody Map<String, String> request) {
 		System.out.println("리뷰 상세보기 추출");
 		Map<String, Object> result = new HashMap<>();
 		try {
-			int tw_review_no = (int) result.get("tw_review_no");
+			String tw_review_no = request.get("tw_review_no");
 			System.out.println("리뷰 번호: " + tw_review_no);
 			ReviewVO review = reviewService.reviewDetail(tw_review_no);
 			result.put("review", review);
@@ -36,6 +36,35 @@ public class ReviewController {
 		}
 		return result;
 	}
+	
+	@PostMapping("/reviewInsert")
+    @ResponseBody
+    public String boardInsert(@RequestBody Map<String, Object> contentData) {
+        System.out.println("리뷰 등록");
+        Map<String, Object> reviewMap = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+        	String tw_review_no = (String)reviewMap.get("tw_review_no");
+        	System.out.println(contentData);
+        	
+        	contentData.put("tw_review_no", tw_review_no);
+        	int status = reviewService.reviewInsert(contentData);
+            result.put("status", true);
+        	
+        	if (status != 0 ) {
+            	return "성공";
+            } else {
+            	return "실패";
+            }
+       
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            result.put("status", false);
+            e.printStackTrace();
+        }
+        return "실패";
+    }
 
 	@PostMapping("/reviewUpdate")
 	@ResponseBody
@@ -71,7 +100,6 @@ public class ReviewController {
 		}
 		return result;
 	}
-	
 	
 	@PostMapping("/reviewList")
 	@ResponseBody

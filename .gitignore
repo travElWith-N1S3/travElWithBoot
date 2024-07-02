@@ -6,7 +6,6 @@ build/
 !**/src/test/**/build/
 src/main/resources/app.properties
 
-
 ### STS ###
 .apt_generated
 .factorypath

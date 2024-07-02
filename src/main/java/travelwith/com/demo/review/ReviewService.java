@@ -1,6 +1,7 @@
 package travelwith.com.demo.review;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -21,8 +22,19 @@ public class ReviewService {
             throw e;
         }
     }
+	
+    public int reviewInsert(Map<String, Object> contentData) {
+        try {
+        	int status = reviewMapper.insertReview(contentData);
+            return status;
+        } catch (Exception e) {
+            System.err.println("Error fetching board insert: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
 
-    public ReviewVO reviewDetail(int tw_review_no) {
+    public ReviewVO reviewDetail(String tw_review_no) {
         try {
             return reviewMapper.viewReview(tw_review_no);
         } catch (Exception e) {
