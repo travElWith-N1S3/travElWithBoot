@@ -36,35 +36,35 @@ public class ReviewController {
 		}
 		return result;
 	}
-	
-	@PostMapping("/reviewInsert")
-    @ResponseBody
-    public String boardInsert(@RequestBody Map<String, Object> contentData) {
-        System.out.println("리뷰 등록");
-        Map<String, Object> reviewMap = new HashMap<>();
-        Map<String, Object> result = new HashMap<>();
 
-        try {
-        	String tw_review_no = (String)reviewMap.get("tw_review_no");
-        	System.out.println(contentData);
-        	
-        	contentData.put("tw_review_no", tw_review_no);
-        	int status = reviewService.reviewInsert(contentData);
-            result.put("status", true);
-        	
-        	if (status != 0 ) {
-            	return "성공";
-            } else {
-            	return "실패";
-            }
-       
-        } catch (Exception e) {
-            result.put("error", e.getMessage());
-            result.put("status", false);
-            e.printStackTrace();
-        }
-        return "실패";
-    }
+	@PostMapping("/reviewInsert")
+	@ResponseBody
+	public String boardInsert(@RequestBody Map<String, Object> contentData) {
+		System.out.println("리뷰 등록");
+		Map<String, Object> reviewMap = new HashMap<>();
+		Map<String, Object> result = new HashMap<>();
+
+		try {
+			String tw_review_no = (String) reviewMap.get("tw_review_no");
+			System.out.println(contentData);
+
+			contentData.put("tw_review_no", tw_review_no);
+			int status = reviewService.reviewInsert(contentData);
+			result.put("status", true);
+
+			if (status != 0) {
+				return "성공";
+			} else {
+				return "실패";
+			}
+
+		} catch (Exception e) {
+			result.put("error", e.getMessage());
+			result.put("status", false);
+			e.printStackTrace();
+		}
+		return "실패";
+	}
 
 	@PostMapping("/reviewUpdate")
 	@ResponseBody
@@ -100,24 +100,24 @@ public class ReviewController {
 		}
 		return result;
 	}
-	
+
 	@PostMapping("/reviewList")
 	@ResponseBody
 	public Map<String, Object> reviewList() {
-	    System.out.println("리뷰 리스트 추출");
-	    Map<String, Object> result = new HashMap<>();
+		System.out.println("리뷰 리스트 추출");
+		Map<String, Object> result = new HashMap<>();
 
-	    try {
-	        List<ReviewVO> list = reviewService.reviewList();
-	        result.put("list", list);
-	        result.put("status", true);
-	        System.out.println("result : " + result);
-	    } catch (Exception e) {
-	        result.put("error", e.getMessage());
-	        result.put("status", false);
-	        e.printStackTrace();
-	    }
-	    return result;
+		try {
+			List<ReviewVO> list = reviewService.reviewList();
+			result.put("list", list);
+			result.put("status", true);
+			System.out.println("result : " + result);
+		} catch (Exception e) {
+			result.put("error", e.getMessage());
+			result.put("status", false);
+			e.printStackTrace();
+		}
+		return result;
 	}
-
+//.
 }
