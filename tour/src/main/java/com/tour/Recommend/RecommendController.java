@@ -16,12 +16,11 @@ import java.util.stream.Collectors;
 public class RecommendController {
     private final SpotRepository spotRepository;
 
-    @GetMapping("/v1/test")
+    @GetMapping("/v1/spot")
     public List<SpotDto> getRecommendSpot(){
         List<SpotDto> all = spotRepository.findAll().stream()
                 .map(SpotDto::new)
                 .collect(Collectors.toList());
-        System.out.println(all);
         return all;
     }
 }
