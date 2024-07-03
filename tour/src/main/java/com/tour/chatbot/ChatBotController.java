@@ -32,7 +32,8 @@ public class ChatBotController {
 
     /**
      * 챗봇 페이지 접근시 쿠키 발행.
-     * 쿠키 저장소는 추후 REDIS 로 변경. 12시간마다 초기화 되도록 설정
+     * 쿠키 저장소는 추후 REDIS 로 변경. 12시간마다 초기화 되도록 설정.
+     * 쿠키 유효성 체크. 통과 못하면 질문 못함.
      */
     @GetMapping("/chatbot")
     public String chattingPage(@CookieValue(value = "ask_token", required = false) Cookie cookie, HttpServletResponse response) {
@@ -61,18 +62,18 @@ public class ChatBotController {
                                   @CookieValue("ask_token") Cookie token) {
 
         log.info("token value = {}", token.getValue());
-        String answer = "";
+        String answer;
 
         try {
             int askCount = askTokenStorage.get(token.getValue());
             if (askCount >= ASK_MAX) {
                 return "질문 횟수가 끝났습니다. 12시간 후에 다시 질문해주세요.";
             }
-
             answer = chatBotService.chatWithBedrock(prompt);
             askTokenStorage.put(token.getValue(), ++askCount);
             log.info("response = {}", answer);
-        } catch (NullPointerException e) {
+
+        } catch (NullPointerException e) { // askTokenStorage 에 저장되지 않은 쿠키값으로 접근시
             log.info("유효하지 않은 쿠키로 채팅 시도");
             answer = "유효하지 않은 접근입니다.";
         }
