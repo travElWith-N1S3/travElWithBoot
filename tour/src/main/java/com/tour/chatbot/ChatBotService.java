@@ -5,11 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
-import software.amazon.awssdk.services.bedrockruntime.model.ContentBlock;
-import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseResponse;
-import software.amazon.awssdk.services.bedrockruntime.model.Message;
+import software.amazon.awssdk.services.bedrockruntime.model.*;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -18,34 +17,74 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @RequiredArgsConstructor
 public class ChatBotService {
-    private final BedrockRuntimeClient bedrockClient;
+    private final BedrockRuntimeAsyncClient bedrockClient;
     private final ChatBotLock chatBotLock;
+    private final WebClient webClient;
     private final String MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0";
 
-    @Async
-    public CompletableFuture<String> chatWithBedrock(String prompt) throws InterruptedException {
+    @Async("taskExecutor")
+    public CompletableFuture<String> chatWithBedrock(String prompt) {
         log.info("prompt = {}", prompt);
+//
+//        try{
+//            Message message = Message.builder()
+//                    .content(ContentBlock.fromText(prompt))
+//                    .role(ConversationRole.USER)
+//                    .build();
+//
+//            ConverseResponse response = bedrockClient.converse(request -> request
+//                    .modelId(MODEL_ID)
+//                    .messages(message)
+//                    .inferenceConfig(config -> config
+//                            .maxTokens(512)
+//                            .temperature(0.5F)
+//                            .topP(0.9F)));
+//
+//            String responseText = response.output().message().content().get(0).text();
+//            return CompletableFuture.completedFuture(responseText);
+//        }catch (Exception e){
+//            e.printStackTrace();
+//            return null;
+//        }
 
-        Message message = Message.builder()
-                .content(ContentBlock.fromText(prompt))
-                .role(ConversationRole.USER)
-                .build();
+        log.info("prompt = {}", prompt);
+        try {
+            Message message = Message.builder()
+                    .content(ContentBlock.fromText(prompt))
+                    .role(ConversationRole.USER)
+                    .build();
 
-        ConverseResponse response = bedrockClient.converse(request -> request
-                .modelId(MODEL_ID)
-                .messages(message)
-                .inferenceConfig(config -> config
-                        .maxTokens(512)
-                        .temperature(0.5F)
-                        .topP(0.9F)));
+            ConverseRequest request = ConverseRequest.builder()
+                    .modelId(MODEL_ID)
+                    .messages(message)
+                    .inferenceConfig(InferenceConfiguration.builder()
+                            .maxTokens(512)
+                            .temperature(0.5F)
+                            .topP(0.9F)
+                            .build())
+                    .build();
 
-        String responseText = response.output().message().content().get(0).text();
-        return CompletableFuture.completedFuture(responseText);
+            CompletableFuture<ConverseResponse> futureResponse = bedrockClient.converse(request);
+
+            return futureResponse.thenApply(response -> {
+                String responseText = response.output().message().content().get(0).text();
+                return responseText;
+            }).exceptionally(ex -> {
+                ex.printStackTrace();
+                return null;
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return CompletableFuture.failedFuture(e);
+        }
     }
+
+//    }
 
 //    @Async
 //    public CompletableFuture<String> chatWithBedrock(String prompt) throws InterruptedException {
-//        log.info("dd");
+//        log.info("{}",prompt);
 //        try {
 //            Thread.sleep(5000); // 명확한 확인을 위해 5초 sleep을 걸었다.
 //        } catch (InterruptedException e) {

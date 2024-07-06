@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,10 +82,23 @@ public class ChatBotController {
 //    }
 
     @GetMapping("/chatbot/chatting")
-    public String chatWithBedrock(@RequestParam("prompt") String prompt,
+    public DeferredResult<String> chatWithBedrock(@RequestParam("prompt") String prompt,
                                   @CookieValue("ask_token") Cookie token)
             throws ExecutionException, InterruptedException {
+//        System.out.println("ChatBotController.chatWithBedrock");
+//        return chatBotService.chatWithBedrock(prompt).get();
+//
         System.out.println("ChatBotController.chatWithBedrock");
-        return chatBotService.chatWithBedrock(prompt).get();
+
+        DeferredResult<String> deferredResult = new DeferredResult<>();
+        chatBotService.chatWithBedrock(prompt).whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                deferredResult.setErrorResult(throwable);
+            } else {
+                deferredResult.setResult(result);
+            }
+        });
+
+        return deferredResult;
     }
 }

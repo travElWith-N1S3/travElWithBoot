@@ -11,12 +11,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 
 
 @Configuration
 @AllArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
     private final ChatBotInterceptor chatBotInterceptor;
+
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
