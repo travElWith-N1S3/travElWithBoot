@@ -9,7 +9,8 @@ import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @RestController
 @Slf4j
@@ -50,55 +51,57 @@ public class ChatBotController {
         return "1";
     }
 
-//    @GetMapping("/chatbot/chatting")
-//    public String chatWithBedrock(@RequestParam("prompt") String prompt,
-//                                  @CookieValue("ask_token") Cookie token)
-//            throws ExecutionException, InterruptedException {
-
-//        log.info("token value = {}", token.getValue());
-//        String answer = "";
-//
-//        if (prompt.isEmpty()) {
-//            return  "";
-//        }
-//
-//        try {
-//            int askCount = askTokenStorage.get(token.getValue());
-//            if (askCount >= ASK_MAX) {
-//                return "질문 횟수가 끝났습니다. 12시간 후에 다시 질문해주세요.";
-//            }
-//        CompletableFuture<String> futureAnswer = chatBotService.chatWithBedrock(prompt);
-//        answer = futureAnswer.get();
-//            askTokenStorage.put(token.getValue(), ++askCount);
-//            log.info("response = {}", answer);
-//
-//        } catch (NullPointerException e) { // askTokenStorage 에 저장되지 않은 쿠키값으로 접근시
-//            log.info("유효하지 않은 쿠키로 채팅 시도");
-//            answer = "유효하지 않은 접근입니다.";
-//        }
-//
-//        String a = answer;
-//        return answer;
-//    }
-
     @GetMapping("/chatbot/chatting")
     public DeferredResult<String> chatWithBedrock(@RequestParam("prompt") String prompt,
-                                  @CookieValue("ask_token") Cookie token)
-            throws ExecutionException, InterruptedException {
-//        System.out.println("ChatBotController.chatWithBedrock");
-//        return chatBotService.chatWithBedrock(prompt).get();
-//
-        System.out.println("ChatBotController.chatWithBedrock");
+                                                  @CookieValue("ask_token") Cookie token,
+                                                  HttpServletResponse response) {
 
+        log.info("token value = {}", token.getValue());
         DeferredResult<String> deferredResult = new DeferredResult<>();
-        chatBotService.chatWithBedrock(prompt).whenComplete((result, throwable) -> {
-            if (throwable != null) {
-                deferredResult.setErrorResult(throwable);
-            } else {
-                deferredResult.setResult(result);
-            }
-        });
 
+//        chatBotLock.CHATBOT_LOCKMAP.computeIfAbsent(token.getValue(), (key) -> new ReentrantLock());
+
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Expires", "0");
+
+
+        if (prompt.isEmpty()) {
+            deferredResult.setResult("");
+            return deferredResult;
+        }
+
+        try {
+            int askCount = askTokenStorage.get(token.getValue());
+            if (askCount >= ASK_MAX) {
+                deferredResult.setResult("질문 횟수가 끝났습니다. 12시간 후에 다시 질문해주세요.");
+                return deferredResult;
+            }
+
+            // 잠금 객체 획득
+            Lock reentrantLock = chatBotLock.CHATBOT_LOCKMAP.get(token.getValue());
+            reentrantLock.lock();
+            chatBotService.chatWithBedrock(prompt).whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    deferredResult.setErrorResult(throwable);
+                } else {
+                    deferredResult.setResult(result);
+//                    ReentrantLock reentrantLock2 = chatBotLock.CHATBOT_LOCKMAP.get(token.getValue());
+//                    boolean heldByCurrentThread = reentrantLock2.isHeldByCurrentThread();
+//                    System.out.println("heldByCurrentThread = " + heldByCurrentThread);
+//
+//                    reentrantLock2.unlock();
+//                    log.info("잠김 해제");
+                }
+            });
+
+            askTokenStorage.put(token.getValue(), ++askCount);
+
+        } catch (NullPointerException e) { // askTokenStorage 에 저장되지 않은 쿠키값으로 접근시
+            log.info("유효하지 않은 쿠키로 채팅 시도");
+            deferredResult.setResult("유효하지 않은 접근입니다.");
+        }
         return deferredResult;
     }
+
 }

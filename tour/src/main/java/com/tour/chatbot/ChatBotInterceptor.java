@@ -35,7 +35,7 @@ public class ChatBotInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         Optional<Cookie> askToken = Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("ask_token"))
                 .findAny();
         chatBotLock.releaseLock(askToken.get().getValue());

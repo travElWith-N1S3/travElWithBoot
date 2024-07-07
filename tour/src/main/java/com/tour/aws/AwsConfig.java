@@ -20,16 +20,6 @@ public class AwsConfig {
     private String secretKey;
 
     @Bean
-    public BedrockRuntimeClient bedrockRuntimeClient() {
-        AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKey, secretKey);
-        BedrockRuntimeClient client = BedrockRuntimeClient.builder()
-                .region(Region.US_EAST_1)
-                .credentialsProvider(StaticCredentialsProvider.create(awsBasicCredentials))
-                .build();
-        return client;
-    }
-
-    @Bean
     public BedrockRuntimeAsyncClient bedrockRuntimeAsyncClient() {
         AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKey, secretKey);
 
