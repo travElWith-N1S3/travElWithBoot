@@ -17,7 +17,6 @@ import java.util.concurrent.locks.Lock;
 @RequiredArgsConstructor
 public class ChatBotService {
     private final BedrockRuntimeAsyncClient bedrockRuntimeAsyncClient;
-    private final ChatBotLock chatBotLock;
     private final String MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0";
 
     @Async()
@@ -25,8 +24,6 @@ public class ChatBotService {
 
         log.info("prompt = {}", prompt);
 
-
-        log.info("잠김");
 
         try {
             Message message = Message.builder()

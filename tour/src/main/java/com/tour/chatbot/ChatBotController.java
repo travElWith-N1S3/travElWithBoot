@@ -9,6 +9,7 @@ import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -18,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequestMapping("/v1")
 public class ChatBotController {
     private final ChatBotService chatBotService;
-    private final ChatBotLock chatBotLock;
+    private final CopyOnWriteArraySet<String> lockSet = new CopyOnWriteArraySet<>();
 
     // redis 로 변경 필요.
     private final ConcurrentHashMap<String, Integer> askTokenStorage = new ConcurrentHashMap<>();
@@ -59,12 +60,18 @@ public class ChatBotController {
         log.info("token value = {}", token.getValue());
         DeferredResult<String> deferredResult = new DeferredResult<>();
 
-//        chatBotLock.CHATBOT_LOCKMAP.computeIfAbsent(token.getValue(), (key) -> new ReentrantLock());
+        if(lockSet.contains(token.getValue())){
+            log.info("잠긴 상태 호출. 무시.");
+            deferredResult.setResult("");
+            return deferredResult;
+        }else {
+            log.info("잠김");
+            lockSet.add(token.getValue());
+        }
 
         response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         response.setHeader("Pragma", "no-cache");
         response.setHeader("Expires", "0");
-
 
         if (prompt.isEmpty()) {
             deferredResult.setResult("");
@@ -78,20 +85,13 @@ public class ChatBotController {
                 return deferredResult;
             }
 
-            // 잠금 객체 획득
-            Lock reentrantLock = chatBotLock.CHATBOT_LOCKMAP.get(token.getValue());
-            reentrantLock.lock();
             chatBotService.chatWithBedrock(prompt).whenComplete((result, throwable) -> {
                 if (throwable != null) {
                     deferredResult.setErrorResult(throwable);
                 } else {
                     deferredResult.setResult(result);
-//                    ReentrantLock reentrantLock2 = chatBotLock.CHATBOT_LOCKMAP.get(token.getValue());
-//                    boolean heldByCurrentThread = reentrantLock2.isHeldByCurrentThread();
-//                    System.out.println("heldByCurrentThread = " + heldByCurrentThread);
-//
-//                    reentrantLock2.unlock();
-//                    log.info("잠김 해제");
+                    lockSet.remove(token.getValue());
+                    log.info("잠김 해제");
                 }
             });
 
