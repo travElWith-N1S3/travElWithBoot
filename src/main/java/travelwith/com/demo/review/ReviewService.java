@@ -12,7 +12,7 @@ import java.util.List;
 public class ReviewService {
     private final ReviewRepository reviewRepository;
 
-    public ReviewVO reviewDetail(String tw_review_no) {
+    public ReviewVO reviewDetail(Long tw_review_no) {
         return reviewRepository.findById(tw_review_no).orElse(null);
     }
 
@@ -22,7 +22,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public String reviewDelete(String tw_review_no) {
+    public String reviewDelete(Long tw_review_no) {
         reviewRepository.deleteById(tw_review_no);
         return "Deleted review with id: " + tw_review_no;
     }

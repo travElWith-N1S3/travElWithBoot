@@ -20,7 +20,7 @@ public class ReviewController {
         System.out.println("리뷰 상세보기 추출");
         Map<String, Object> result = new HashMap<>();
         try {
-            String tw_review_no = request.get("tw_review_no");
+            Long tw_review_no = Long.parseLong(request.get("tw_review_no"));
             System.out.println("리뷰 번호: " + tw_review_no);
             ReviewVO review = reviewService.reviewDetail(tw_review_no);
             result.put("review", review);
@@ -72,7 +72,7 @@ public class ReviewController {
     @ResponseBody
     public Map<String, Object> reviewDelete(@RequestBody Map<String, String> request) {
         System.out.println("리뷰 삭제 요청");
-        String tw_review_no = request.get("tw_review_no");
+        Long tw_review_no = Long.parseLong(request.get("tw_review_no"));
         Map<String, Object> result = new HashMap<>();
         try {
             String deleteUser = reviewService.reviewDelete(tw_review_no);
