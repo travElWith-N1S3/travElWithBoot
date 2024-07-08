@@ -31,32 +31,28 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	
-	//mariaDB
-	// https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client
-	implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.2.0'
+	// MariaDB
+	implementation 'org.mariadb.jdbc:mariadb-java-client:2.2.0'
 	
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.5.2'
+	// Validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation:2.5.2'
 	
-	//mybatis
-	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
-	
-	
+	// Spring Data JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 	
-	//amazon
+	// Amazon S3
 	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.730'
 	
-	//webclient supprot AuthFuntion
+	// WebClient with AuthFunction support
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	
-	//iamport
-	implementation group: 'com.github.iamport', name: 'iamport-rest-client-java', version: '0.2.22'
-    implementation group: 'com.squareup.retrofit2', name: 'adapter-rxjava2', version: '2.9.0'
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
-    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.9.3'
-    implementation group: 'com.squareup.retrofit2', name: 'converter-gson', version: '2.3.0'
+	// Iamport
+	implementation 'com.github.iamport:iamport-rest-client-java:0.2.22'
+    implementation 'com.squareup.retrofit2:adapter-rxjava2:2.9.0'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
 }
 
 tasks.named('test') {
