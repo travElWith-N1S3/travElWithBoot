@@ -1,6 +1,7 @@
 package com.tour.chatbot;
 
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -71,16 +72,9 @@ public class ChatBotService {
         return true;
     }
 
-//        @Async
-//    public CompletableFuture<String> chatWithBedrock(String prompt) throws InterruptedException {
-//        log.info("{}",prompt);
-//        try {
-//            Thread.sleep(5000); // 명확한 확인을 위해 5초 sleep을 걸었다.
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        String a = "답변";
-//        log.info(a);
-//        return CompletableFuture.completedFuture(a);
-//    }
+    public void setTokenCookie(HttpServletResponse response, UUID uuid) {
+        Cookie token = new Cookie("ask_token", uuid.toString());
+        token.setMaxAge(43200);  // 12시간
+        response.addCookie(token);
+    }
 }
