@@ -1,10 +1,8 @@
 package travelwith.com.demo.review;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +21,7 @@ public class ReviewVO {
     private String tw_review_title;
     private String tw_review_content;
     private String tw_review_rating;
+    
+    @Transient
+    private MultipartFile file;
 }
