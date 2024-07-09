@@ -1,4 +1,4 @@
-package com.tour.Recommend;
+package travelwith.com.demo.Recommend;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
