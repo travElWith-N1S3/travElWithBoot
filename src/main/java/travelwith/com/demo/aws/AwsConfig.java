@@ -1,5 +1,7 @@
 package travelwith.com.demo.aws;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,10 @@ public class AwsConfig {
     @Value("${bedrock.aws_secret_access_key}")
     private String secretKey;
 
+    @Bean
+    public Gson gson (){
+        return new Gson();
+    }
 
     @Bean
     public BedrockRuntimeAsyncClient bedrockRuntimeAsyncClient() {

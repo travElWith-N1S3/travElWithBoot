@@ -1,13 +1,17 @@
 package travelwith.com.demo.chatbot;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -19,9 +23,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class ChatBotController {
     private final ChatBotService chatBotService;
     private final CopyOnWriteArraySet<String> lockSet = new CopyOnWriteArraySet<>();
-
-    // redis 로 변경 필요.
-    private final ConcurrentHashMap<String, Integer> askTokenStorage = new ConcurrentHashMap<>();
     private final int ASK_MAX = 10;
     private final String NO_ANSWER = "";
 
@@ -36,11 +37,12 @@ public class ChatBotController {
         if (cookie == null) {// 사용자에게 쿠키가 없으면 쿠키 새롭게 발급
             UUID uuid = UUID.randomUUID();
             chatBotService.setTokenCookie(response, uuid);
-            askTokenStorage.put(uuid.toString(), 0);
+            chatBotService.saveNewCookie(uuid.toString());
+            chatBotService.saveConversation(uuid.toString(), new ConversationLog(uuid.toString(), LocalDateTime.now().toString(), "대화 시작", "대화를 시작합니다"));
 
         } else { // 사용자가 쿠키 보유하고 있을시 쿠키 유효성 검사
-            boolean cookieValid = chatBotService.validateCookie(cookie, askTokenStorage.get(cookie.getValue()));
-
+            String cookieValue = cookie.getValue();
+            boolean cookieValid = chatBotService.validateCookie(cookie, chatBotService.getAskCount(cookieValue));
             if (!cookieValid) { // 쿠키가 이상하면 0 반환. 정상이면 1반환
                 return "0";
             }
@@ -55,13 +57,14 @@ public class ChatBotController {
         // 1. 자바에서 외부 api 호출은 기본적으로 동기식. 따로 설정해줘야 함.
         // 2. 비동기로 구현했으나, prompt가 같은 요청은 동기식으로 작동함. 이유는 모르겠음.
 
-        log.info("token value = {}", token.getValue());
+        String cookieValue = token.getValue();
+        log.info("token value = {}", cookieValue);
         DeferredResult<String> deferredResult = new DeferredResult<>();
 
         int askCount = 0;
 
         try {// askTokenStorage 에 저장된 쿠키값인지 확인
-            askCount = askTokenStorage.get(token.getValue());
+            askCount = chatBotService.getAskCount(cookieValue);
         } catch (NullPointerException e) {
             log.info("유효하지 않은 쿠키로 채팅 시도");
             deferredResult.setResult("유효하지 않은 접근입니다.");
@@ -78,7 +81,7 @@ public class ChatBotController {
             return deferredResult;
         }
 
-        if (lockSet.contains(token.getValue())) { // lock 이 잠겼는지 체크
+        if (lockSet.contains(cookieValue)) { // lock 이 잠겼는지 체크
             log.info("잠긴 상태 호출. 무시.");
             deferredResult.setResult(NO_ANSWER);
             return deferredResult;
@@ -86,26 +89,31 @@ public class ChatBotController {
 
         // 챗봇 질문시 lock 잠그기
         log.info("잠김");
-        lockSet.add(token.getValue());
+        lockSet.add(cookieValue);
+
+        String conversations = chatBotService.getConversations(cookieValue);
+        System.out.println("conversations = " + conversations);
+        ChatBotPrompt chatBotPrompt = new ChatBotPrompt(cookieValue,prompt, conversations);
 
         // 챗봇 호출
-        chatBotService.chatWithBedrock(token.getValue(), prompt).whenComplete((result, throwable) -> {
+        chatBotService.chatWithBedrock(cookieValue, chatBotPrompt).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 deferredResult.setErrorResult(throwable);
             } else {
-                JsonObject jsonObject =  new JsonObject().getAsJsonObject(result);
-                deferredResult.setResult(jsonObject.get("result").getAsString());
-                lockSet.remove(token.getValue());
+                ConversationLog conversationLog = new ConversationLog(cookieValue, LocalDateTime.now().toString(), prompt, result);
+                chatBotService.saveConversation(cookieValue, conversationLog);
+                JsonParser jsonParser = new JsonParser();
+                JsonObject asJsonObject = jsonParser.parse(result).getAsJsonObject();
+                System.out.println(asJsonObject.get("result"));
+                deferredResult.setResult(asJsonObject.get("result").getAsString());
+                lockSet.remove(cookieValue);
                 log.info("잠김 해제");
             }
         });
 
-        askTokenStorage.put(token.getValue(), ++askCount);
-
+        chatBotService.increaseAskCount(cookieValue);
         return deferredResult;
     }
-
-
 
     private String checkAskCount(int askCount) {
         if (askCount >= ASK_MAX) {
