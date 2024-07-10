@@ -28,7 +28,7 @@ public class ReviewController {
         System.out.println("리뷰 상세보기 추출");
         Map<String, Object> result = new HashMap<>();
         try {
-            Long twReviewNo = Long.parseLong(request.get("twReviewNo"));
+            Long twReviewNo = Long.parseLong(request.get("twReviewNo").toString());
             System.out.println("리뷰 번호: " + twReviewNo);
             ReviewVO review = reviewService.reviewDetail(twReviewNo);
 
@@ -75,10 +75,10 @@ public class ReviewController {
         System.out.println("리뷰 정보 수정 요청 받음");
         Map<String, Object> result = new HashMap<>();
         try {
-            Long twReviewNo = Long.parseLong((String) request.get("twReviewNo"));
+            Long twReviewNo = Long.parseLong(request.get("twReviewNo").toString());
             String twReviewTitle = (String) request.get("twReviewTitle");
             String twReviewContent = (String) request.get("twReviewContent");
-            String twReviewRating = (String) request.get("twReviewRating");
+            String twReviewRating = request.get("twReviewRating").toString();
 
             ReviewVO reviewVO = new ReviewVO();
             reviewVO.setTwReviewNo(twReviewNo);
@@ -127,7 +127,6 @@ public class ReviewController {
             result.put("totalPages", reviewPages.getTotalPages());
             result.put("totalElements", reviewPages.getTotalElements());
             result.put("status", true);
-            System.out.println(result);
         } catch (Exception e) {
             result.put("error", e.getMessage());
             result.put("status", false);
