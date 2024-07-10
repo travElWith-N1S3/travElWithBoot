@@ -40,7 +40,8 @@ dependencies {
 	implementation("software.amazon.awssdk:bedrock")
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'software.amazon.awssdk:netty-nio-client:2.20.3'
-
+// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-webflux', version: '3.3.1'
 
 	// MariaDB
 	implementation 'org.mariadb.jdbc:mariadb-java-client:2.2.0'

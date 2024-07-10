@@ -8,7 +8,7 @@ import lombok.ToString;
 
 @Entity
 @Getter
-@Table(name = "SPOT")
+@Table(name = "tour_spot")
 @ToString
 public class Spot {
 
