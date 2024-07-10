@@ -1,9 +1,16 @@
 package travelwith.com.demo.review;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import travelwith.com.demo.image.ImageService;
+import travelwith.com.demo.image.ImageVO;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +20,7 @@ import java.util.Map;
 @RequestMapping("/api1")
 public class ReviewController {
     private final ReviewService reviewService;
+    private final ImageService imageService;
 
     @PostMapping("/reviewView")
     @ResponseBody
@@ -20,9 +28,18 @@ public class ReviewController {
         System.out.println("리뷰 상세보기 추출");
         Map<String, Object> result = new HashMap<>();
         try {
-            String tw_review_no = request.get("tw_review_no");
-            System.out.println("리뷰 번호: " + tw_review_no);
-            ReviewVO review = reviewService.reviewDetail(tw_review_no);
+            Long twReviewNo = Long.parseLong(request.get("twReviewNo"));
+            System.out.println("리뷰 번호: " + twReviewNo);
+            ReviewVO review = reviewService.reviewDetail(twReviewNo);
+
+            List<ImageVO> imageDetails = imageService.getImageDetails(String.valueOf(twReviewNo));
+            int imageIndex = 0;
+            for(ImageVO image: imageDetails) {
+                String imageUrl = imageService.getImage("review", image.getRealFilename());
+                result.put("imageUrl" + imageIndex, imageUrl);
+                imageIndex++;
+            }
+
             result.put("review", review);
             result.put("status", true);
         } catch (Exception e) {
@@ -34,30 +51,43 @@ public class ReviewController {
     }
 
     @PostMapping("/reviewInsert")
-    @ResponseBody
-    public String reviewInsert(@RequestBody ReviewVO reviewVO) {
-        System.out.println("리뷰 등록");
-        Map<String, Object> result = new HashMap<>();
-
+    public String reviewInsert(
+            @RequestParam("twReviewTitle") String title,
+            @RequestParam("twReviewContent") String content,
+            @RequestParam("twReviewRating") String rating,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        ReviewVO reviewVO = ReviewVO.builder()
+                .twReviewTitle(title)
+                .twReviewContent(content)
+                .twReviewRating(rating)
+                .build();
         try {
-            String status = reviewService.reviewInsert(reviewVO);
-            result.put("status", true);
-            return "성공";
-        } catch (Exception e) {
-            result.put("error", e.getMessage());
-            result.put("status", false);
+            return reviewService.reviewInsert(reviewVO, file);
+        } catch (IOException e) {
             e.printStackTrace();
-            return "실패";
+            return "리뷰 등록에 실패했습니다.";
         }
     }
 
     @PostMapping("/reviewUpdate")
     @ResponseBody
-    public Map<String, Object> reviewUpdate(@RequestBody ReviewVO reviewVO) {
+    public Map<String, Object> reviewUpdate(@RequestBody Map<String, Object> request) {
         System.out.println("리뷰 정보 수정 요청 받음");
         Map<String, Object> result = new HashMap<>();
         try {
+            Long twReviewNo = Long.parseLong((String) request.get("twReviewNo"));
+            String twReviewTitle = (String) request.get("twReviewTitle");
+            String twReviewContent = (String) request.get("twReviewContent");
+            String twReviewRating = (String) request.get("twReviewRating");
+
+            ReviewVO reviewVO = new ReviewVO();
+            reviewVO.setTwReviewNo(twReviewNo);
+            reviewVO.setTwReviewTitle(twReviewTitle);
+            reviewVO.setTwReviewContent(twReviewContent);
+            reviewVO.setTwReviewRating(twReviewRating);
+
             reviewService.reviewUpdate(reviewVO);
+
             result.put("review", reviewVO);
             result.put("status", true);
         } catch (Exception e) {
@@ -72,10 +102,10 @@ public class ReviewController {
     @ResponseBody
     public Map<String, Object> reviewDelete(@RequestBody Map<String, String> request) {
         System.out.println("리뷰 삭제 요청");
-        String tw_review_no = request.get("tw_review_no");
+        Long twReviewNo = Long.parseLong(request.get("twReviewNo"));
         Map<String, Object> result = new HashMap<>();
         try {
-            String deleteUser = reviewService.reviewDelete(tw_review_no);
+            String deleteUser = reviewService.reviewDelete(twReviewNo);
             result.put("deleteReview", deleteUser);
             result.put("status", true);
         } catch (Exception e) {
@@ -86,17 +116,18 @@ public class ReviewController {
         return result;
     }
 
-    @PostMapping("/reviewList")
+    @GetMapping("/reviewList")
     @ResponseBody
-    public Map<String, Object> reviewList() {
+    public Map<String, Object> reviewList(@PageableDefault(page = 0, size = 8) Pageable pageable) {
         System.out.println("리뷰 리스트 추출");
         Map<String, Object> result = new HashMap<>();
-
         try {
-            List<ReviewVO> list = reviewService.reviewList();
-            result.put("list", list);
+            Page<ReviewVO> reviewPages = reviewService.findAllPage(pageable);
+            result.put("reviews", reviewPages.getContent());
+            result.put("totalPages", reviewPages.getTotalPages());
+            result.put("totalElements", reviewPages.getTotalElements());
             result.put("status", true);
-            System.out.println("result : " + result);
+            System.out.println(result);
         } catch (Exception e) {
             result.put("error", e.getMessage());
             result.put("status", false);
