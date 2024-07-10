@@ -18,6 +18,7 @@ public class AwsConfig {
     @Value("${bedrock.aws_secret_access_key}")
     private String secretKey;
 
+
     @Bean
     public BedrockRuntimeAsyncClient bedrockRuntimeAsyncClient() {
         AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKey, secretKey);

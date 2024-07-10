@@ -1,5 +1,6 @@
 package travelwith.com.demo.chatbot;
 
+import com.google.gson.JsonObject;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -88,11 +89,12 @@ public class ChatBotController {
         lockSet.add(token.getValue());
 
         // 챗봇 호출
-        chatBotService.chatWithBedrock(prompt).whenComplete((result, throwable) -> {
+        chatBotService.chatWithBedrock(token.getValue(), prompt).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 deferredResult.setErrorResult(throwable);
             } else {
-                deferredResult.setResult(result);
+                JsonObject jsonObject =  new JsonObject().getAsJsonObject(result);
+                deferredResult.setResult(jsonObject.get("result").getAsString());
                 lockSet.remove(token.getValue());
                 log.info("잠김 해제");
             }
@@ -102,6 +104,8 @@ public class ChatBotController {
 
         return deferredResult;
     }
+
+
 
     private String checkAskCount(int askCount) {
         if (askCount >= ASK_MAX) {

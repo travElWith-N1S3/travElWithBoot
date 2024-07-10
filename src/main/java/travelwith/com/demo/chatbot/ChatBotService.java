@@ -1,11 +1,16 @@
 package travelwith.com.demo.chatbot;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.model.*;
 
@@ -16,36 +21,31 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @RequiredArgsConstructor
 public class ChatBotService {
-    private final BedrockRuntimeAsyncClient bedrockRuntimeAsyncClient;
-    private final String MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0";
+    private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
 
     @Async()
-    public CompletableFuture<String> chatWithBedrock(String prompt) {
+    public CompletableFuture<String> chatWithBedrock(String token, String prompt) {
 
         log.info("prompt = {}", prompt);
 
-
         try {
-            Message message = Message.builder()
-                    .content(ContentBlock.fromText(prompt))
-                    .role(ConversationRole.USER)
+            ChatBotJson chatBotJson = new ChatBotJson(token, prompt);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(chatBotJson);
+
+            DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiGatewayUrl);
+            factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
+
+            WebClient client = WebClient.builder()
+                    .baseUrl(apiGatewayUrl)
                     .build();
 
-            ConverseRequest request = ConverseRequest.builder()
-                    .modelId(MODEL_ID)
-                    .messages(message)
-                    .inferenceConfig(InferenceConfiguration.builder()
-                            .maxTokens(512)
-                            .temperature(0.5F)
-                            .topP(0.9F)
-                            .build())
-                    .build();
-
-            CompletableFuture<ConverseResponse> futureResponse = bedrockRuntimeAsyncClient.converse(request);
-
-            return futureResponse.thenApply(response -> {
-                String responseText = response.output().message().content().get(0).text();
-                return responseText;
+            CompletableFuture<String> stringMono = client.post()
+                    .body(BodyInserters.fromValue(json))
+                    .retrieve()
+                    .bodyToMono(String.class).toFuture();
+            return stringMono.thenApply(response -> {
+                return response;
             }).exceptionally(ex -> {
                 ex.printStackTrace();
                 return null;
