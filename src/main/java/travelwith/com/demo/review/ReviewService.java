@@ -1,11 +1,14 @@
 package travelwith.com.demo.review;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
-import travelwith.com.demo.image.ImageRepository;
 import travelwith.com.demo.image.ImageVO;
 import travelwith.com.demo.image.ImageService;
 
@@ -16,31 +19,30 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewService {
     private final ReviewRepository reviewRepository;
-    private final ImageRepository imageRepository;
     private final ImageService imageService;
 
-    public ReviewVO reviewDetail(Long tw_review_no) {
-        return reviewRepository.findById(tw_review_no).orElse(null);
+    public ReviewVO reviewDetail(Long twReviewNo) {
+        return reviewRepository.findById(twReviewNo).orElse(null);
     }
 
     @Transactional
     public void reviewUpdate(ReviewVO reviewVO) {
-        ReviewVO existingReview = reviewRepository.findById(reviewVO.getTw_review_no()).orElse(null);
+        ReviewVO existingReview = reviewRepository.findById(reviewVO.getTwReviewNo()).orElse(null);
         if (existingReview != null) {
-            existingReview.setTw_review_title(reviewVO.getTw_review_title());
-            existingReview.setTw_review_content(reviewVO.getTw_review_content());
-            existingReview.setTw_review_rating(reviewVO.getTw_review_rating());
+            existingReview.setTwReviewTitle(reviewVO.getTwReviewTitle());
+            existingReview.setTwReviewContent(reviewVO.getTwReviewContent());
+            existingReview.setTwReviewRating(reviewVO.getTwReviewRating());
             reviewRepository.save(existingReview);
         }
     }
 
     @Transactional
-    public String reviewDelete(Long tw_review_no) {
+    public String reviewDelete(Long twReviewNo) {
         // 리뷰 삭제 전 이미지 삭제 처리
-        imageService.deleteImage("review", String.valueOf(tw_review_no));
+        imageService.deleteImage("review", String.valueOf(twReviewNo));
 
-        reviewRepository.deleteById(tw_review_no);
-        return "Deleted review with id: " + tw_review_no;
+        reviewRepository.deleteById(twReviewNo);
+        return "Deleted review with id: " + twReviewNo;
     }
 
     @Transactional(timeout = 60)
@@ -49,10 +51,10 @@ public class ReviewService {
 
         if (file != null && !file.isEmpty()) {
             // MultipartFile 객체를 파일에 저장한다
-            ImageVO imageVO = writeFile(file, reviewVO.getTw_review_no());
+            writeFile(file, reviewVO.getTwReviewNo());
         }
 
-        return "Inserted review with id: " + reviewVO.getTw_review_no();
+        return "Inserted review with id: " + reviewVO.getTwReviewNo();
     }
 
     private ImageVO writeFile(MultipartFile file, Long reviewId) throws IOException {
@@ -73,5 +75,12 @@ public class ReviewService {
 
     public List<ReviewVO> reviewList() {
         return reviewRepository.findAll();
+    }
+    
+    public Page<ReviewVO> findAllPage(Pageable pageable){
+        int page = Math.max(0, pageable.getPageNumber() - 1); // 페이지 번호가 음수가 되지 않도록 처리
+        int pageLimit = 8;
+        Page<ReviewVO> postsPages = reviewRepository.findAll(PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "twReviewNo")));
+        return postsPages;
     }
 }

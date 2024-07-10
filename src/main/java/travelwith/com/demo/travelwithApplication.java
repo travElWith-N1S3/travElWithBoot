@@ -14,5 +14,4 @@ public class travelwithApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(travelwithApplication.class, args);
 	}
-
 }

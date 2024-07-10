@@ -1,4 +1,4 @@
-package com.tour.Recommend;
+package travelwith.com.demo.Recommend;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

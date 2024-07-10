@@ -1,8 +1,5 @@
-package com.tour;
+package travelwith.com.demo;
 
-import com.tour.chatbot.ChatBotInterceptor;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;

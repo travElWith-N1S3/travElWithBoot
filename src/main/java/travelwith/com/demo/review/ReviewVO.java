@@ -17,10 +17,15 @@ import lombok.NoArgsConstructor;
 public class ReviewVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long tw_review_no;  // 기본 키를 Long 타입으로 변경
-    private String tw_review_title;
-    private String tw_review_content;
-    private String tw_review_rating;
+    
+    @Column(name = "tw_review_no")
+    private Long twReviewNo;  // 기본 키를 Long 타입으로 변경
+    @Column(name = "tw_review_title")
+    private String twReviewTitle;
+    @Column(name = "tw_review_content")
+    private String twReviewContent;
+    @Column(name = "tw_review_rating")
+    private String twReviewRating;
     
     @Transient
     private MultipartFile file;

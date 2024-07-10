@@ -1,7 +1,6 @@
-package com.tour.Recommend;
+package travelwith.com.demo.Recommend;
 
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

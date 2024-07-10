@@ -1,4 +1,4 @@
-package com.tour.chatbot;
+package travelwith.com.demo.chatbot;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,7 +11,6 @@ import software.amazon.awssdk.services.bedrockruntime.model.*;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.Lock;
 
 @Service
 @Slf4j

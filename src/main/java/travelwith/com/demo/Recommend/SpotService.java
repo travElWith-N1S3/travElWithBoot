@@ -1,4 +1,4 @@
-package com.tour.Recommend;
+package travelwith.com.demo.Recommend;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
