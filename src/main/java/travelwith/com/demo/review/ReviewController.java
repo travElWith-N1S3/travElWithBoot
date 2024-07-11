@@ -128,4 +128,19 @@ public class ReviewController {
         }
         return result;
     }
+	
+	@GetMapping("/recentReviews")
+    public Map<String, Object> getRecentReviews() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<ReviewVO> recentReviews = reviewService.getRecentReviews();
+            result.put("recentReviews", recentReviews);
+            result.put("status", true);
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            result.put("status", false);
+            e.printStackTrace();
+        }
+        return result;
+    }
 }

@@ -78,4 +78,8 @@ public class ReviewService {
     public Page<ReviewVO> searchReviews(String query, Pageable pageable) {
         return reviewRepository.findByTwReviewTitleContainingOrTwReviewContentContainingOrderByTwReviewNoDesc(query, query, pageable);
     }
+    
+    public List<ReviewVO> getRecentReviews() {
+        return reviewRepository.findTop3ByOrderByTwReviewNoDesc();
+    }
 }
