@@ -2,6 +2,7 @@ package travelwith.com.demo.image;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,86 +10,67 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class ImageService {
-    private final AmazonS3 amazonS3Client; // S3
-    private final ImageRepository imageRepository;
+	private final AmazonS3 amazonS3Client; // S3
 
-    @Value("${cloud.aws.s3.bucket}")
-    private String bucketName;
+	@Value("${cloud.aws.s3.bucket}")
+	private String bucketName;
 
-    public String getImage(String image_type, String real_filename) {
-        String key = image_type + "/" + real_filename;
-        return amazonS3Client.getUrl(bucketName, key).toString();
-    }
+	public String getImage(String image_type, String real_filename) {
+		String key = image_type + "/" + real_filename;
+		return amazonS3Client.getUrl(bucketName, key).toString();
+	}
 
-    public String uploadCloudAndSaveToDb(String image_type, MultipartFile file, String use_id) throws IOException {
-        // 서버에 저장할 파일 이름을 생성 UUID
-        String realFileName = UUID.randomUUID().toString();
+	public String uploadCloud(String image_type, MultipartFile file) throws IOException {
+		// 서버에 저장할 파일 이름을 생성 UUID
+		String realFileName = UUID.randomUUID().toString();
 
-        // 파일 메타데이터 설정
-        ObjectMetadata objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentLength(file.getSize());
-        objectMetadata.setContentType(file.getContentType());
+		// 파일 메타데이터 설정
+		ObjectMetadata objectMetadata = new ObjectMetadata();
+		objectMetadata.setContentLength(file.getSize());
+		objectMetadata.setContentType(file.getContentType());
 
-        // 저장될 위치 + 파일명
-        String key = image_type + "/" + realFileName;
+		// 저장될 위치 + 파일명
+		String key = image_type + "/" + realFileName;
 
-        // 클라우드에 파일 저장
-        amazonS3Client.putObject(bucketName, key, file.getInputStream(), objectMetadata);
-        amazonS3Client.setObjectAcl(bucketName, key, CannedAccessControlList.PublicRead);
+		// 클라우드에 파일 저장
+		amazonS3Client.putObject(bucketName, key, file.getInputStream(), objectMetadata);
+		amazonS3Client.setObjectAcl(bucketName, key, CannedAccessControlList.PublicRead);
 
-        String fileUrl = amazonS3Client.getUrl(bucketName, key).toString();
+		return amazonS3Client.getUrl(bucketName, key).toString();
+	}
 
-        // ImageVO 생성 후 DB에 저장
-        ImageVO imageVO = ImageVO.builder()
-                .imageType(image_type)
-                .useId(use_id)
-                .realFilename(realFileName)
-                .contentType(file.getContentType())
-                .size(String.valueOf(file.getSize()))
-                .createdAt(new Date())
-                .build();
+	public String writeFile(MultipartFile file) throws IOException {
+		// S3에 이미지 업로드
+		String imageType = "review"; // 이미지 타입을 설정
+		String fileUrl = uploadCloud(imageType, file);
 
-        // 새 이미지 정보를 DB에 저장
-        imageRepository.save(imageVO);
+		return fileUrl;
+	}
 
-        return fileUrl;
-    }
-    
-    public String UpdateImage(String image_type, MultipartFile file, String use_id) throws IOException {
-    	// 이미지의 use_id와 동일한 데이터가 이미 존재하는지 확인
-        List<ImageVO> existingImages = imageRepository.findByUseId(use_id);
-        if (!existingImages.isEmpty()) {
-            // 이미지가 존재하면 해당 이미지를 삭제
-            ImageVO existingImage = existingImages.get(0);
-            imageRepository.deleteByUseId(existingImage.getUseId());
-            String existingKey = existingImage.getImageType() + "/" + existingImage.getRealFilename();
-            amazonS3Client.deleteObject(bucketName, existingKey);
-        }
-        return uploadCloudAndSaveToDb(image_type, file, use_id);
-    }
+	// 정규표현식: <img> 태그에서 src 속성 값을 추출
+	private static final Pattern IMG_SRC_PATTERN = Pattern.compile("<img[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>");
 
-    public String deleteImage(String image_type, String use_id) {
-        List<ImageVO> existingImages = imageRepository.findByUseId(use_id);
+	public void deleteImageByUrl(String reviewContent) {
+		Matcher matcher = IMG_SRC_PATTERN.matcher(reviewContent);
+		while (matcher.find()) {
+			String imageUrl = matcher.group(1);
+			// 이미지 URL에서 S3 버킷 내 키 추출
+			String key = extractKeyFromImageUrl(imageUrl);
+			// S3에서 이미지 삭제
+			amazonS3Client.deleteObject(new DeleteObjectRequest(bucketName, key));
+		}
+	}
 
-        if (!existingImages.isEmpty()) {
-            // 이미지가 존재하면 해당 이미지를 삭제
-            ImageVO existingImage = existingImages.get(0);
-            imageRepository.deleteByUseId(existingImage.getUseId());
-            String key = existingImage.getImageType() + "/" + existingImage.getRealFilename();
-            amazonS3Client.deleteObject(bucketName, key);
-        }
-
-        return use_id;
-    }
-
-    public List<ImageVO> getImageDetails(String use_id) {
-        return imageRepository.findByUseId(use_id);
-    }
+	// 이미지 URL에서 S3 버킷 내 키 추출 메서드
+	private String extractKeyFromImageUrl(String imageUrl) {
+		int startIndex = imageUrl.indexOf(bucketName) + bucketName.length() + 1;
+		return imageUrl.substring(startIndex);
+	}
 }
