@@ -1,9 +1,7 @@
 package travelwith.com.demo.review;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -75,13 +73,6 @@ public class ReviewService {
 
     public List<ReviewVO> reviewList() {
         return reviewRepository.findAll();
-    }
-    
-    public Page<ReviewVO> findAllPage(Pageable pageable){
-        int page = Math.max(0, pageable.getPageNumber() - 1); // 페이지 번호가 음수가 되지 않도록 처리
-        int pageLimit = 10;
-        Page<ReviewVO> postsPages = reviewRepository.findAll(PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "twReviewNo")));
-        return postsPages;
     }
     
     public Page<ReviewVO> searchReviews(String query, Pageable pageable) {

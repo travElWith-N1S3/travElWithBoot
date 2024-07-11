@@ -111,25 +111,6 @@ public class ReviewController {
 		return result;
 	}
 
-	@GetMapping("/reviewList")
-	@ResponseBody
-	public Map<String, Object> reviewList(@PageableDefault(page = 0, size = 8) Pageable pageable) {
-		System.out.println("리뷰 리스트 추출");
-		Map<String, Object> result = new HashMap<>();
-		try {
-			Page<ReviewVO> reviewPages = reviewService.findAllPage(pageable);
-			result.put("reviews", reviewPages.getContent());
-			result.put("totalPages", reviewPages.getTotalPages());
-			result.put("totalElements", reviewPages.getTotalElements());
-			result.put("status", true);
-		} catch (Exception e) {
-			result.put("error", e.getMessage());
-			result.put("status", false);
-			e.printStackTrace();
-		}
-		return result;
-	}
-
 	@GetMapping("/reviewSearch")
     public Map<String, Object> searchReviews(@RequestParam("query") String query, @PageableDefault(page = 0, size = 10) Pageable pageable) {
         System.out.println("리뷰 검색");
