@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 public class ChatBotService {
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, ConversationLog> redisTemplate;
     private final Gson gson;
 
     private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
@@ -64,14 +64,14 @@ public class ChatBotService {
         }
     }
 
-    public void saveNewCookie(String cookie){
-        redisTemplate.opsForValue().setIfAbsent(cookie, 0);
-        redisTemplate.expire(cookie, 12, TimeUnit.HOURS);
-    }
+//    public void saveNewCookie(String cookie){
+//        redisTemplate.opsForValue().setIfAbsent(cookie, 0);
+//        redisTemplate.expire(cookie, 12, TimeUnit.HOURS);
+//    }
 
-    public int getAskCount(String coookie){
-        return (int) redisTemplate.opsForValue().get(coookie);
-    }
+//    public int getAskCount(String coookie){
+//        return (int) redisTemplate.opsForValue().get(coookie);
+//    }
 
     public void increaseAskCount(String cookie){
         redisTemplate.opsForValue().increment(cookie);
@@ -79,14 +79,14 @@ public class ChatBotService {
 
 
     public void saveConversation(String key, ConversationLog conversation) {
-        ListOperations<String, Object> listOps = redisTemplate.opsForList();
+        ListOperations<String, ConversationLog> listOps = redisTemplate.opsForList();
         listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
         listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
         redisTemplate.expire(key, 12, TimeUnit.HOURS);
     }
 
     public String getConversations(String key) {
-        ListOperations<String, Object> listOps = redisTemplate.opsForList();
+        ListOperations<String, ConversationLog> listOps = redisTemplate.opsForList();
         return gson.toJson(listOps.range(key, 0, -1));
     }
 
