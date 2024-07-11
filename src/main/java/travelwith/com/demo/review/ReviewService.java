@@ -79,8 +79,12 @@ public class ReviewService {
     
     public Page<ReviewVO> findAllPage(Pageable pageable){
         int page = Math.max(0, pageable.getPageNumber() - 1); // 페이지 번호가 음수가 되지 않도록 처리
-        int pageLimit = 8;
+        int pageLimit = 10;
         Page<ReviewVO> postsPages = reviewRepository.findAll(PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "twReviewNo")));
         return postsPages;
+    }
+    
+    public List<ReviewVO> searchReviews(String query) {
+        return reviewRepository.findByTwReviewTitleContainingOrTwReviewContentContaining(query, query);
     }
 }

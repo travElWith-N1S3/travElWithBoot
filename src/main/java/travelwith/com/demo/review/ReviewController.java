@@ -134,4 +134,19 @@ public class ReviewController {
         }
         return result;
     }
+    
+    @GetMapping("/reviewSearch")
+    public Map<String, Object> searchReviews(@RequestParam("query") String query) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            List<ReviewVO> reviews = reviewService.searchReviews(query);
+            result.put("reviews", reviews);
+            result.put("status", true);
+        } catch (Exception e) {
+            result.put("error", e.getMessage());
+            result.put("status", false);
+            e.printStackTrace();
+        }
+        return result;
+    }
 }
