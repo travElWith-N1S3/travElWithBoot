@@ -85,6 +85,6 @@ public class ReviewService {
     }
     
     public Page<ReviewVO> searchReviews(String query, Pageable pageable) {
-        return reviewRepository.findByTwReviewTitleContainingOrTwReviewContentContaining(query, query, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "twReviewNo")));
+        return reviewRepository.findByTwReviewTitleContainingOrTwReviewContentContainingOrderByTwReviewNoDesc(query, query, pageable);
     }
 }

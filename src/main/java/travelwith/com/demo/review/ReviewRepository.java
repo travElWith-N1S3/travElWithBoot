@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<ReviewVO, Long> {
-    Page<ReviewVO> findByTwReviewTitleContainingOrTwReviewContentContaining(String title, String content, Pageable pageable);
+    Page<ReviewVO> findByTwReviewTitleContainingOrTwReviewContentContainingOrderByTwReviewNoDesc(String title, String content, Pageable pageable);
 }
