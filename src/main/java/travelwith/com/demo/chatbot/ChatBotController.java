@@ -1,5 +1,6 @@
 package travelwith.com.demo.chatbot;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -32,7 +33,7 @@ public class ChatBotController {
      * 쿠키 유효성 체크. 통과 못하면 질문 못함.
      */
     @GetMapping("/chatbot")
-    public String chattingPage(@CookieValue(value = "ask_token", required = false) Cookie cookie, HttpServletResponse response) {
+    public String chattingPage(@CookieValue(value = "ask_token", required = false) Cookie cookie, HttpServletResponse response) throws JsonProcessingException {
 
         if (cookie == null) {// 사용자에게 쿠키가 없으면 쿠키 새롭게 발급
             UUID uuid = UUID.randomUUID();
@@ -101,7 +102,11 @@ public class ChatBotController {
                 deferredResult.setErrorResult(throwable);
             } else {
                 ConversationLog conversationLog = new ConversationLog(cookieValue, LocalDateTime.now().toString(), prompt, result);
-                chatBotService.saveConversation(cookieValue, conversationLog);
+                try {
+                    chatBotService.saveConversation(cookieValue, conversationLog);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
                 JsonParser jsonParser = new JsonParser();
                 JsonObject asJsonObject = jsonParser.parse(result).getAsJsonObject();
                 System.out.println(asJsonObject.get("result"));
@@ -111,7 +116,7 @@ public class ChatBotController {
             }
         });
 
-        chatBotService.increaseAskCount(cookieValue);
+//        chatBotService.increaseAskCount(cookieValue);
         return deferredResult;
     }
 
