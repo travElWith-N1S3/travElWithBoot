@@ -42,10 +42,16 @@ public class ChatBotController {
 
         } else { // 사용자가 쿠키 보유하고 있을시 쿠키 유효성 검사
             String cookieValue = cookie.getValue();
-            boolean cookieValid = chatBotService.validateCookie(cookie, chatBotService.getAskCount(cookieValue));
-            if (!cookieValid) { // 쿠키가 이상하면 0 반환. 정상이면 1반환
+            try{
+                boolean cookieValid = chatBotService.validateCookie(cookie, chatBotService.getAskCount(cookieValue));
+                if (!cookieValid) { // 쿠키가 이상하면 0 반환. 정상이면 1반환
+                    return "0";
+                }
+            }catch (NullPointerException e){
                 return "0";
             }
+
+
         }
         return "1";
     }
