@@ -1,5 +1,6 @@
 package travelwith.com.demo.chatbot;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

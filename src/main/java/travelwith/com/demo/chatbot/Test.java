@@ -24,6 +24,7 @@ private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazona
 
     @RequestMapping("/ssss")
     public String test() throws JsonProcessingException {
+        System.out.println("Test.test");
 //        log.info("prompt = {}", prompt);
         try {
             ChatBotJson chatBotJson = new ChatBotJson("21321","서울에 대해 알려줘");
@@ -44,7 +45,7 @@ private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazona
                     .bodyToMono(String.class).toFuture();
 
             stringMono.thenApply(response->{
-
+                System.out.println(response);
                 return response;
             });
 
