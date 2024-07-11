@@ -30,10 +30,10 @@ public class RedisConfig {
 
         LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = LettuceClientConfiguration.builder();
 
-        builder.useSsl().and()
-                .clientOptions(ClientOptions.builder()
-                        .sslOptions(SslOptions.builder().build())
-                        .build());
+//        builder.useSsl().and()
+//                .clientOptions(ClientOptions.builder()
+//                        .sslOptions(SslOptions.builder().build())
+//                        .build());
         return new LettuceConnectionFactory(redisStandaloneConfiguration, builder.build());
     }
 

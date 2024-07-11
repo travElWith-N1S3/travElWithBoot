@@ -47,7 +47,6 @@ public class ChatBotService {
                     .retrieve()
                     .bodyToMono(String.class).toFuture();
             return stringMono.thenApply(response -> {
-                System.out.println("response = " + response);
                 return response;
             }).exceptionally(ex -> {
                 ex.printStackTrace();
@@ -74,18 +73,40 @@ public class ChatBotService {
 //    }
 
 
-    public void saveConversation(String key, ConversationLog conversation) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonConversation = objectMapper.writeValueAsString(conversation);
-        ListOperations<String, Object> listOps = redisTemplate.opsForList();
-        listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
-        listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
+//    public void saveConversation(String key, ConversationLog conversation) {
+//        ListOperations<String, Object> listOps = redisTemplate.opsForList();
+//        listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
+//        listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
+//        redisTemplate.expire(key, 12, TimeUnit.HOURS);
+//    }
+
+    public void saveConversation(String key, ConversationLog conversation) {
+        try {
+            ListOperations<String, Object> listOps = redisTemplate.opsForList();
+            listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
+            listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
+        } catch (Exception e) {
+            // 기존 키가 리스트가 아닌 경우, 키를 삭제하고 새로운 리스트를 생성
+            redisTemplate.delete(key);
+            ListOperations<String, Object> listOps = redisTemplate.opsForList();
+            listOps.leftPush(key, conversation);
+        }
         redisTemplate.expire(key, 12, TimeUnit.HOURS);
     }
 
+//    public String getConversations(String key) {
+//        ListOperations<String, Object> listOps = redisTemplate.opsForList();
+//        return gson.toJson(listOps.range(key, 0, -1));
+//    }
+
     public String getConversations(String key) {
-        ListOperations<String, Object> listOps = redisTemplate.opsForList();
-        return gson.toJson(listOps.range(key, 0, -1));
+        try {
+            ListOperations<String, Object> listOps = redisTemplate.opsForList();
+            return gson.toJson(listOps.range(key, 0, -1));
+        } catch (Exception e) {
+            log.error("Error retrieving conversations: ", e);
+            return "[]";  // 오류 발생 시 빈 리스트 반환
+        }
     }
 
     public boolean validateCookie(Cookie cookie, Integer StorageValue) {

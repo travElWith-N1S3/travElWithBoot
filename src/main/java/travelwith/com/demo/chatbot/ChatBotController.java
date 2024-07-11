@@ -93,7 +93,6 @@ public class ChatBotController {
         lockSet.add(cookieValue);
 
         String conversations = chatBotService.getConversations(cookieValue);
-        System.out.println("conversations = " + conversations);
         ChatBotPrompt chatBotPrompt = new ChatBotPrompt(cookieValue,prompt, conversations);
 
         // 챗봇 호출
@@ -102,14 +101,9 @@ public class ChatBotController {
                 deferredResult.setErrorResult(throwable);
             } else {
                 ConversationLog conversationLog = new ConversationLog(cookieValue, LocalDateTime.now().toString(), prompt, result);
-                try {
-                    chatBotService.saveConversation(cookieValue, conversationLog);
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
+                chatBotService.saveConversation(cookieValue, conversationLog);
                 JsonParser jsonParser = new JsonParser();
                 JsonObject asJsonObject = jsonParser.parse(result).getAsJsonObject();
-                System.out.println(asJsonObject.get("result"));
                 deferredResult.setResult(asJsonObject.get("result").getAsString());
                 lockSet.remove(cookieValue);
                 log.info("잠김 해제");
