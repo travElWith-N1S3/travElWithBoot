@@ -33,12 +33,12 @@ public class SchedulerService {
     private static final Pattern IMG_SRC_PATTERN = Pattern.compile("<img[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>");
     
     @Value("${cloud.aws.s3.bucket}")
-	private String bucketName;
+    private String bucketName;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Scheduled(fixedDelay = 60000) // 60초마다 실행
+    @Scheduled(fixedDelay = 60000*10) // 10분마다 실행
     @Transactional
     public void fileTokenAutoDelete() {
         log.info("사용되지 않는 이미지 파일을 삭제합니다.");
@@ -67,7 +67,12 @@ public class SchedulerService {
             .flatMap(review -> {
                 Matcher matcher = IMG_SRC_PATTERN.matcher(review.getTwReviewContent());
                 return matcher.results()
-                    .map(match -> match.group(1))
+                    .map(match -> {
+                        String src = match.group(1);
+                        // 파일 경로만 추출 (파일 이름뿐만 아니라 경로 전체)
+                        return src.substring(src.indexOf("review/"));
+                    })
+                    .filter(src -> src != null && !src.isEmpty())
                     .collect(Collectors.toList())
                     .stream();
             })
