@@ -1,8 +1,8 @@
 package travelwith.com.demo.review;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -108,9 +108,11 @@ public class ReviewController {
 
     @GetMapping("/reviewSearch")
     public Map<String, Object> searchReviews(@RequestParam("query") String query,
-            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+                                             @RequestParam("page") int page,
+                                             @RequestParam("size") int size) {
         Map<String, Object> result = new HashMap<>();
         try {
+            Pageable pageable = PageRequest.of(page, size);
             Page<ReviewVO> reviews = reviewService.searchReviews(query, pageable);
             result.put("reviews", reviews.getContent());
             result.put("totalPages", reviews.getTotalPages());
