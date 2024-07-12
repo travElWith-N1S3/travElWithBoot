@@ -12,4 +12,3 @@ public interface SpotRepository extends JpaRepository<Spot, Integer> {
 
     List<Spot> findFirst3ByOrderByIdDesc();
 }
-
