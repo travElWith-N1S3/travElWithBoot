@@ -26,11 +26,9 @@ public class ReviewController {
     @PostMapping("/reviewView")
     @ResponseBody
     public Map<String, Object> reviewView(@RequestBody Map<String, String> request) {
-        System.out.println("리뷰 상세보기 추출");
         Map<String, Object> result = new HashMap<>();
         try {
             Long twReviewNo = Long.parseLong(request.get("twReviewNo"));
-            System.out.println("리뷰 번호: " + twReviewNo);
             ReviewVO review = reviewService.reviewDetail(twReviewNo);
             result.put("review", review);
             result.put("status", true);
@@ -66,7 +64,6 @@ public class ReviewController {
     @PostMapping("/reviewUpdate")
     @ResponseBody
     public Map<String, Object> reviewUpdate(@RequestBody Map<String, Object> request) {
-        System.out.println("리뷰 정보 수정 요청 받음");
         Map<String, Object> result = new HashMap<>();
         try {
             Long twReviewNo = Long.parseLong(request.get("twReviewNo").toString());
@@ -95,7 +92,6 @@ public class ReviewController {
     @PostMapping("/reviewDelete")
     @ResponseBody
     public Map<String, Object> reviewDelete(@RequestBody Map<String, String> request) {
-        System.out.println("리뷰 삭제 요청");
         Long twReviewNo = Long.parseLong(request.get("twReviewNo"));
         Map<String, Object> result = new HashMap<>();
         try {
@@ -113,7 +109,6 @@ public class ReviewController {
     @GetMapping("/reviewSearch")
     public Map<String, Object> searchReviews(@RequestParam("query") String query,
             @PageableDefault(page = 0, size = 10) Pageable pageable) {
-        System.out.println("리뷰 검색");
         Map<String, Object> result = new HashMap<>();
         try {
             Page<ReviewVO> reviews = reviewService.searchReviews(query, pageable);
@@ -131,7 +126,6 @@ public class ReviewController {
 
     @GetMapping("/recentReviews")
     public Map<String, Object> getRecentReviews() {
-        System.out.println("최근 리뷰 3개(홈)");
         Map<String, Object> result = new HashMap<>();
         try {
             List<ReviewVO> recentReviews = reviewService.getRecentReviews();
@@ -147,7 +141,6 @@ public class ReviewController {
 
     @PostMapping("/imgUpload")
     public ResponseEntity<FileResponse> imgUpload(@RequestPart(value = "upload", required = false) MultipartFile file) {
-        System.out.println("이미지 업로드 요청");
         if (file == null || file.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FileResponse.builder().uploaded(false).build());
         }

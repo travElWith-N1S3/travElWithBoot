@@ -1,5 +1,5 @@
 -- 여행지 테이블
-CREATE TABLE `travelwith_image` (
+CREATE TABLE `tour-spot` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
   `images` varchar(255) DEFAULT null,
