@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 
 @RestController
 @Slf4j
@@ -24,5 +26,10 @@ public class RecommendController {
     @GetMapping("/v1/destinationList")
     public Page<SpotDto> getAllSpot(@PageableDefault(page = 1) Pageable pageable) {
         return spotService.findAllPage(pageable);
+    }
+
+    @GetMapping("/v1/top-tour-spot")
+    public List<SpotDto> get3spot(){
+        return spotService.findTop3Spot();
     }
 }

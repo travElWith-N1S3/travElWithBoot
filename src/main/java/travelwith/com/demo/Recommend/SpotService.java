@@ -1,11 +1,11 @@
 package travelwith.com.demo.Recommend;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,5 +23,11 @@ public class SpotService {
         Page<Spot> postsPages = spotRepository.findAll(PageRequest.of(page, pageLimit, Sort.by(Sort.Direction.DESC, "id")));
         Page<SpotDto> spotDtos = postsPages.map(postsPage -> new SpotDto(postsPage));
         return spotDtos;
+    }
+
+    public List<SpotDto> findTop3Spot(){
+        return spotRepository.findFirst3ByOrderByIdDesc()
+                .stream().map(SpotDto::new)
+                .collect(Collectors.toList());
     }
 }
