@@ -18,6 +18,11 @@ import java.util.List;
 public class RecommendController {
     private final SpotService spotService;
 
+    @GetMapping("/v1/popular-destination")
+    public List<String> findPopularSpot(){
+        return spotService.findPopularSpot();
+    }
+
     @GetMapping("/v1/destination/info")
     public SpotDto getRecommendSpot(@RequestParam("id") int id) {
         return spotService.findById(id);

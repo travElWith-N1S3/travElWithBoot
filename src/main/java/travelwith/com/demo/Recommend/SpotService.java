@@ -9,7 +9,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,10 +19,6 @@ import java.util.stream.Collectors;
 public class SpotService {
     private final SpotRepository spotRepository;
     private final RedisTemplate<String, String> redisStrTemplate;
-
-    public SpotDto findById(int id) {
-        return new SpotDto(spotRepository.findById(id));
-    }
 
     @PostConstruct
     public void addDummyData() {
@@ -39,6 +37,16 @@ public class SpotService {
         redisStrTemplate.opsForZSet().incrementScore("popular", "전주 한옥마을", 8);
     }
 
+
+    public List<String> findPopularSpot(){
+        Set<String> popular = redisStrTemplate.opsForZSet().reverseRange("popular", 0, 5);
+        System.out.println(popular);
+        return new ArrayList<>(popular);
+    }
+
+    public SpotDto findById(int id) {
+        return new SpotDto(spotRepository.findById(id));
+    }
 
     public Page<SpotDto> findAllPage(Pageable pageable) {
         int page = Math.max(0, pageable.getPageNumber() - 1); // 페이지 번호가 음수가 되지 않도록 처리
