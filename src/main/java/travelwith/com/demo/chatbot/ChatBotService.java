@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 public class ChatBotService {
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, ConversationLog> redisTemplate;
     private final Gson gson;
 
     private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
@@ -59,14 +59,14 @@ public class ChatBotService {
         }
     }
 
-    public void saveNewCookie(String cookie){
-        redisTemplate.opsForValue().setIfAbsent(cookie, 0);
-        redisTemplate.expire(cookie, 12, TimeUnit.HOURS);
-    }
+//    public void saveNewCookie(String cookie){
+//        redisTemplate.opsForValue().setIfAbsent(cookie, 0);
+//        redisTemplate.expire(cookie, 12, TimeUnit.HOURS);
+//    }
 
-    public int getAskCount(String coookie){
-        return (int) redisTemplate.opsForValue().get(coookie);
-    }
+//    public int getAskCount(String coookie){
+//        return (int) redisTemplate.opsForValue().get(coookie);
+//    }
 
 //    public void increaseAskCount(String cookie){
 //        redisTemplate.opsForValue().increment(cookie);
@@ -81,16 +81,9 @@ public class ChatBotService {
 //    }
 
     public void saveConversation(String key, ConversationLog conversation) {
-        try {
-            ListOperations<String, Object> listOps = redisTemplate.opsForList();
-            listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
-            listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
-        } catch (Exception e) {
-            // 기존 키가 리스트가 아닌 경우, 키를 삭제하고 새로운 리스트를 생성
-            redisTemplate.delete(key);
-            ListOperations<String, Object> listOps = redisTemplate.opsForList();
-            listOps.leftPush(key, conversation);
-        }
+        ListOperations<String, ConversationLog> listOps = redisTemplate.opsForList();
+        listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
+        listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
         redisTemplate.expire(key, 12, TimeUnit.HOURS);
     }
 
@@ -100,13 +93,8 @@ public class ChatBotService {
 //    }
 
     public String getConversations(String key) {
-        try {
-            ListOperations<String, Object> listOps = redisTemplate.opsForList();
-            return gson.toJson(listOps.range(key, 0, -1));
-        } catch (Exception e) {
-            log.error("Error retrieving conversations: ", e);
-            return "[]";  // 오류 발생 시 빈 리스트 반환
-        }
+        ListOperations<String, ConversationLog> listOps = redisTemplate.opsForList();
+        return gson.toJson(listOps.range(key, 0, -1));
     }
 
     public boolean validateCookie(Cookie cookie, Integer StorageValue) {
