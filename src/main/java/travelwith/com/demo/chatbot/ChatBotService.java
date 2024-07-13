@@ -1,6 +1,5 @@
 package travelwith.com.demo.chatbot;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import jakarta.servlet.http.Cookie;
@@ -24,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class ChatBotService {
     private final RedisTemplate<String, ConversationLog> redisTemplate;
+    private final RedisTemplate<String, String> redisStrTemplate;
     private final Gson gson;
 
     private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
@@ -35,6 +35,7 @@ public class ChatBotService {
             ObjectMapper objectMapper = new ObjectMapper();
             ChatBotJson chatBotJson = new ChatBotJson(token, objectMapper.writeValueAsString(prompt));
             String json = objectMapper.writeValueAsString(chatBotJson);
+
             DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiGatewayUrl);
             factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
@@ -46,6 +47,7 @@ public class ChatBotService {
                     .body(BodyInserters.fromValue(json))
                     .retrieve()
                     .bodyToMono(String.class).toFuture();
+
             return stringMono.thenApply(response -> {
                 return response;
             }).exceptionally(ex -> {
@@ -59,26 +61,18 @@ public class ChatBotService {
         }
     }
 
-//    public void saveNewCookie(String cookie){
-//        redisTemplate.opsForValue().setIfAbsent(cookie, 0);
-//        redisTemplate.expire(cookie, 12, TimeUnit.HOURS);
-//    }
+    public void saveNewCookie(String cookie){
+        redisStrTemplate.opsForZSet().add("cookies", cookie, 0);
+        redisStrTemplate.expire(cookie, 12, TimeUnit.HOURS);
+    }
 
-//    public int getAskCount(String coookie){
-//        return (int) redisTemplate.opsForValue().get(coookie);
-//    }
+    public Double getAskCount(String coookie){
+        return redisStrTemplate.opsForZSet().score("cookies", coookie);
+    }
 
-//    public void increaseAskCount(String cookie){
-//        redisTemplate.opsForValue().increment(cookie);
-//    }
-
-
-//    public void saveConversation(String key, ConversationLog conversation) {
-//        ListOperations<String, Object> listOps = redisTemplate.opsForList();
-//        listOps.leftPush(key, conversation);  // 최신 대화를 왼쪽으로 추가
-//        listOps.trim(key, 0, 9);  // 리스트의 길이를 최대 10개로 유지
-//        redisTemplate.expire(key, 12, TimeUnit.HOURS);
-//    }
+    public void increaseAskCount(String cookie){
+        redisStrTemplate.opsForZSet().incrementScore("cookies", cookie, 1);
+    }
 
     public void saveConversation(String key, ConversationLog conversation) {
         ListOperations<String, ConversationLog> listOps = redisTemplate.opsForList();
@@ -87,17 +81,12 @@ public class ChatBotService {
         redisTemplate.expire(key, 12, TimeUnit.HOURS);
     }
 
-//    public String getConversations(String key) {
-//        ListOperations<String, Object> listOps = redisTemplate.opsForList();
-//        return gson.toJson(listOps.range(key, 0, -1));
-//    }
-
     public String getConversations(String key) {
         ListOperations<String, ConversationLog> listOps = redisTemplate.opsForList();
         return gson.toJson(listOps.range(key, 0, -1));
     }
 
-    public boolean validateCookie(Cookie cookie, Integer StorageValue) {
+    public boolean validateCookie(Cookie cookie, Double StorageValue) {
         try {
             UUID uuid = UUID.fromString(cookie.getValue());
             if (StorageValue == null) {
