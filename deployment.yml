@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: travel-with
-          image: seohojun/travel-with:latest # 여기서 Docker 이미지를 사용
+          image: 992382591529.dkr.ecr.us-west-2.amazonaws.com/travel-app:latest
           ports:
             - containerPort: 8080
           env:
