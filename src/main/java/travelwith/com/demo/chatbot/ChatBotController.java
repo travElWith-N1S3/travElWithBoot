@@ -1,20 +1,17 @@
 package travelwith.com.demo.chatbot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @RestController
@@ -43,12 +40,12 @@ public class ChatBotController {
 
         } else { // 사용자가 쿠키 보유하고 있을시 쿠키 유효성 검사
             String cookieValue = cookie.getValue();
-            try{
+            try {
                 boolean cookieValid = chatBotService.validateCookie(cookie, chatBotService.getAskCount(cookieValue));
                 if (!cookieValid) { // 쿠키가 이상하면 0 반환. 정상이면 1반환
                     return "0";
                 }
-            }catch (NullPointerException e){
+            } catch (NullPointerException e) {
                 return "0";
             }
         }
@@ -97,18 +94,25 @@ public class ChatBotController {
         lockSet.add(cookieValue);
 
         String conversations = chatBotService.getConversations(cookieValue);
-        ChatBotPrompt chatBotPrompt = new ChatBotPrompt(cookieValue,prompt, conversations);
+        ChatBotPrompt chatBotPrompt = new ChatBotPrompt(cookieValue, prompt, conversations);
 
         // 챗봇 호출
         chatBotService.chatWithBedrock(cookieValue, chatBotPrompt).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 deferredResult.setErrorResult(throwable);
             } else {
+                while (true) {
+                    String answer = chatBotService.pullingSQSMessage(cookieValue);
+                    System.out.println("호출중");
+                    if (!answer.isEmpty()) break;
+                }
+
                 ConversationLog conversationLog = new ConversationLog(cookieValue, LocalDateTime.now().toString(), prompt, result);
                 chatBotService.saveConversation(cookieValue, conversationLog);
                 JsonParser jsonParser = new JsonParser();
                 JsonObject asJsonObject = jsonParser.parse(result).getAsJsonObject();
                 deferredResult.setResult(asJsonObject.get("result").getAsString());
+
                 lockSet.remove(cookieValue);
                 log.info("잠김 해제");
             }
