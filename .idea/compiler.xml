@@ -11,5 +11,10 @@
         <module name="tour.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="tour" target="17" />
+      <module name="travElWithBoot.main" target="17" />
+      <module name="travElWithBoot.test" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>
