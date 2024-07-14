@@ -98,6 +98,7 @@ public class ChatBotController {
 
         // 챗봇 호출
         chatBotService.chatWithBedrock(cookieValue, chatBotPrompt).whenComplete((result, throwable) -> {
+            System.out.println("응답옴");
             if (throwable != null) {
                 deferredResult.setErrorResult(throwable);
             } else {
