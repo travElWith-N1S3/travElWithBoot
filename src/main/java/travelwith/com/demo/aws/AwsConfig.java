@@ -29,6 +29,11 @@ public class AwsConfig {
         return new Gson();
     }
 
+    @Bean
+    public JsonParser jsonParser(){
+        return new JsonParser();
+    }
+
 
     @Bean
     public AmazonSQS amazonSQS(){
@@ -36,7 +41,7 @@ public class AwsConfig {
 
         // Create SQS client
         AmazonSQS sqsClient = AmazonSQSClientBuilder.standard()
-                .withRegion("us-east-1") // Replace with your desired region
+                .withRegion("us-west-2") // Replace with your desired region
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                 .build();
         return sqsClient;

@@ -2,10 +2,12 @@ package travelwith.com.demo.chatbot;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.micrometer.core.instrument.util.StringEscapeUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +15,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -116,9 +121,19 @@ public class ChatBotService {
     }
 
     public void setTokenCookie(HttpServletResponse response, UUID uuid) {
-        Cookie token = new Cookie("ask_token", uuid.toString());
-        token.setMaxAge(43200);  // 12시간
-        response.addCookie(token);
+//        Cookie token = new Cookie("ask_token", uuid.toString());
+//        token.setPath("/");
+//        token.setMaxAge(43200);  // 12시간
+//        response.addCookie(token);
+        ResponseCookie token = ResponseCookie.from("ask_token", uuid.toString())
+                .path("/")
+                .maxAge(Duration.ofHours(12))
+                .sameSite("None")
+                .secure(true)
+                .httpOnly(false) // JavaScript에서 접근 가능하게 설정
+                .domain("localhost") // 클라이언트의 도메인으로 설정
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, token.toString());
     }
 
     public String pullingSQSMessage(String cookieId) {
@@ -136,13 +151,17 @@ public class ChatBotService {
         List<Message> messages = receiveMessageResult.getMessages();
 
         for (Message message : messages) {
-            Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
+//            Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
             JsonParser jsonParser = new JsonParser();
             JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
-            JsonObject body = (JsonObject) object.get("body");
-            System.out.println(body);
-            System.out.println(body.get("s_id"));
+//            JsonObject body = (JsonObject) object.get("body");
+//            System.out.println(body);
+//            System.out.println(body.get("s_id"));
 
+
+            answer = message.getBody();
+//            System.out.println(getMessage(answer, "s_id"));
+//            System.out.println(getMessage(answer, "p_text"));
 
 //            String messageId= messageAttributes.get("cookie_id").getStringValue();
 //            Gson body = new Gson();
@@ -156,12 +175,46 @@ public class ChatBotService {
 //            if(messageId.equals(cookieId)){
 //                answer = message.getBody();
 //                System.out.println(answer);
-//                DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
-//                amazonSQS.deleteMessage(deleteRequest);
+                DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
+                amazonSQS.deleteMessage(deleteRequest);
 //                break;
 //            }
         }
         return answer;
+    }
+
+    public static String getMessage(String message, String param) {
+        try {
+            // JSON 파싱을 위한 ObjectMapper 생성
+            ObjectMapper objectMapper = new ObjectMapper();
+            // 주어진 JSON 문자열에서 "body"의 값을 파싱
+            JsonNode jsonNode = objectMapper.readTree(message).get("body");
+            // "body"의 값에서 "p_text"의 값을 추출
+            String pTextValue = jsonNode.get(param).asText();
+            // 유니코드 해석 및 반환
+            return decodeUnicode(pTextValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // 유니코드 이스케이프 문자열 해석하기
+    private static String decodeUnicode(String encodedText) {
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < encodedText.length()) {
+            if (encodedText.charAt(i) == '\\' && i + 1 < encodedText.length() && encodedText.charAt(i + 1) == 'u') {
+                String unicode = encodedText.substring(i + 2, i + 6);
+                char character = (char) Integer.parseInt(unicode, 16);
+                sb.append(character);
+                i += 6; // 유니코드 문자는 '\\u' 뒤에 4자리이므로 6을 더함
+            } else {
+                sb.append(encodedText.charAt(i));
+                i++;
+            }
+        }
+        return sb.toString();
     }
 
     private static String getOrCreateQueueUrl(AmazonSQS sqsClient, String queueName) {

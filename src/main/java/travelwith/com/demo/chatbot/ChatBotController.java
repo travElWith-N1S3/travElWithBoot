@@ -1,6 +1,5 @@
 package travelwith.com.demo.chatbot;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import jakarta.servlet.http.Cookie;
@@ -30,7 +29,7 @@ public class ChatBotController {
      * 쿠키 유효성 체크. 통과 못하면 질문 못함.
      */
     @GetMapping("/chatbot")
-    public String chattingPage(@CookieValue(value = "ask_token", required = false) Cookie cookie, HttpServletResponse response) throws JsonProcessingException {
+    public String chattingPage(@CookieValue(value = "ask_token", required = false) Cookie cookie, HttpServletResponse response) {
 
         if (cookie == null) {// 사용자에게 쿠키가 없으면 쿠키 새롭게 발급
             UUID uuid = UUID.randomUUID();
