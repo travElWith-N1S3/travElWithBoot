@@ -83,10 +83,14 @@ public class ChatBotService {
 
     public void saveNewCookie(String cookie) {
         redisStrTemplate.opsForZSet().add("cookies", cookie, 0);
-        redisStrTemplate.expire(cookie, 12, TimeUnit.HOURS);
+        redisStrTemplate.expire("cookies", 12, TimeUnit.HOURS);
+        System.out.println(redisStrTemplate.opsForZSet().score("cookies", cookie));
+        System.out.println(redisStrTemplate.opsForZSet().reverseRangeByScore("cookies", 0, 100));
     }
 
     public Double getAskCount(String coookie) {
+        System.out.println(coookie);
+        System.out.println(redisStrTemplate.opsForZSet().score("cookies", coookie));
         return redisStrTemplate.opsForZSet().score("cookies", coookie);
     }
 

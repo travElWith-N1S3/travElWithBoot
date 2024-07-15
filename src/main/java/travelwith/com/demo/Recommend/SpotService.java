@@ -22,6 +22,7 @@ public class SpotService {
 
     @PostConstruct
     public void addDummyData() {
+        redisStrTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
         redisStrTemplate.opsForZSet().add("popular", "제주도 한라산", 1);
         redisStrTemplate.opsForZSet().add("popular", "부산 해운대", 1);
         redisStrTemplate.opsForZSet().add("popular", "전주 한옥마을", 1);
@@ -40,7 +41,6 @@ public class SpotService {
 
     public List<String> findPopularSpot(){
         Set<String> popular = redisStrTemplate.opsForZSet().reverseRange("popular", 0, 5);
-        System.out.println(popular);
         return new ArrayList<>(popular);
     }
 

@@ -1,6 +1,7 @@
 package travelwith.com.demo.chatbot;
 
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +13,10 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 
 /*
@@ -30,6 +33,9 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
     private final Set<WebSocketSession> sessionsSet = new HashSet<>();
     private final ChatBotService chatBotService;
     private final JsonParser jsonParser;
+    private final CopyOnWriteArraySet<String> lockSet = new CopyOnWriteArraySet<>();
+    private final int ASK_MAX = 10;
+    private final String NO_ANSWER = "";
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -40,22 +46,62 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
-        System.out.println(message.getPayload());
+
+        String answer = "";
+        Double askCount = 0d;
+
         JsonObject parse = (JsonObject) jsonParser.parse(message.getPayload());
-        String id = parse.get("id").toString();
+        String id = parse.get("id").toString().replaceAll("\"","")
+                .replaceAll("\"","");
         String prompt = parse.get("text").toString();
+
+        try {// askTokenStorage 에 저장된 쿠키값인지 확인
+            askCount = chatBotService.getAskCount(id);
+            if(askCount == null){
+                throw new NullPointerException();
+            }
+        } catch (NullPointerException e) {
+            log.info("유효하지 않은 쿠키로 채팅 시도");
+            session.sendMessage(new TextMessage(NO_ANSWER));
+            return;
+        }
+
+        String countCheck = checkAskCount(askCount);
+        if (countCheck != null) { // 질문 횟수 체크
+            session.sendMessage(new TextMessage(countCheck));
+            return;
+        }
+
+        if (prompt.isEmpty()) { // 질문 내용 공백 체크'
+            session.sendMessage(new TextMessage(NO_ANSWER));
+            return;
+        }
+
+        if (lockSet.contains(id)) { // lock 이 잠겼는지 체크
+            log.info("잠긴 상태 호출. 무시.");
+            return ;
+        }
+
         String conversations = chatBotService.getConversations(id);
         ChatBotPrompt chatBotPrompt = new ChatBotPrompt(id, prompt, conversations);
+        chatBotService.increaseAskCount(id);
+
+        // 챗봇 질문시 lock 잠그기
+        log.info("잠김");
+        lockSet.add(id);
         chatBotService.chatWithBedrock(id, chatBotPrompt);
-        String answer = "";
         while (true){
-            System.out.println("찾는중");
             answer = chatBotService.pullingSQSMessage(id);
             if(!answer.isEmpty()) break;
         }
-        System.out.println(answer);
-        System.out.println(session);
+        JsonObject parsed = (JsonObject) jsonParser.parse(answer);
+        JsonObject body =(JsonObject)parsed.get("body");
+        answer = body.get("p_text").toString();
+        ConversationLog conversationLog = new ConversationLog(id, LocalDateTime.now().toString(), prompt, answer);
+        chatBotService.saveConversation(id, conversationLog);
         session.sendMessage(new TextMessage(answer));
+        lockSet.remove(id);
+        log.info("잠김 해제");
     }
 
     @Override
@@ -82,4 +128,11 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
 //            log.error(e.getMessage(), e);
 //        }
 //    }
+
+    private String checkAskCount(Double askCount) {
+        if ( askCount >= ASK_MAX) {
+            return "질문 횟수가 끝났습니다. 12시간 후에 다시 질문해주세요.";
+        }
+        return null;
+    }
 }
