@@ -6,18 +6,28 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
 import travelwith.com.demo.image.ImageService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ImageService imageService;
+    
+    private final WebClient.Builder webClientBuilder;
+    
+    @Value("${api.gateway.url}")
+    private String apiGatewayUrl;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
@@ -39,9 +49,7 @@ public class ReviewService {
 
     @Transactional
     public String reviewDelete(Long twReviewNo) {
-        // 리뷰 삭제 전 이미지 삭제 처리
         try {
-            // 리뷰 내용을 조회하여 이미지 URL을 추출하여 삭제
             ReviewVO review = reviewRepository.findById(twReviewNo).orElse(null);
             if (review != null) {
                 imageService.deleteImageByUrl(review.getTwReviewContent());
@@ -51,21 +59,39 @@ public class ReviewService {
             return "이미지 삭제 중 오류가 발생했습니다.";
         }
 
-        // 리뷰 삭제
         reviewRepository.deleteById(twReviewNo);
         return "리뷰와 이미지가 성공적으로 삭제되었습니다.";
     }
 
     @Transactional(timeout = 60)
-    public String reviewInsert(ReviewVO reviewVO, MultipartFile file) throws IOException {
+    public CompletableFuture<String> reviewInsert(ReviewVO reviewVO, MultipartFile file) throws IOException {
         reviewRepository.save(reviewVO);
 
         if (file != null && !file.isEmpty()) {
-            // 이미지를 S3에 업로드하고 DB에는 저장하지 않음
             imageService.uploadCloud("review", file);
         }
 
-        return "Inserted review with id: " + reviewVO.getTwReviewNo();
+        String title = reviewVO.getTwReviewTitle();
+        String rank = reviewVO.getTwReviewRating();
+        String body = reviewVO.getTwReviewContent();
+
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(apiGatewayUrl);
+        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
+
+        WebClient client = webClientBuilder
+                .uriBuilderFactory(factory)
+                .baseUrl(apiGatewayUrl)
+                .build();
+
+        Mono<String> stringMono = client.post()
+                .body(BodyInserters.fromValue(new ReviewPayload(title, rank, body)))
+                .retrieve()
+                .bodyToMono(String.class);
+
+        return stringMono.toFuture().exceptionally(ex -> {
+            ex.printStackTrace();
+            return "An error occurred while inserting the review.";
+        });
     }
 
     public List<ReviewVO> reviewList() {

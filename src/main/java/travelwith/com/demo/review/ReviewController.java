@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,7 +48,7 @@ public class ReviewController {
         ReviewVO reviewVO = ReviewVO.builder().twReviewTitle(title).twReviewContent(content).twReviewRating(rating)
                 .build();
         try {
-            String insertResult = reviewService.reviewInsert(reviewVO, file);
+            CompletableFuture<String> insertResult = reviewService.reviewInsert(reviewVO, file);
             Map<String, Object> result = new HashMap<>();
             result.put("message", insertResult);
             result.put("status", true);
