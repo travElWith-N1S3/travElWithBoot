@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
 import travelwith.com.demo.image.ImageService;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class ReviewController {
         ReviewVO reviewVO = ReviewVO.builder().twReviewTitle(title).twReviewContent(content).twReviewRating(rating)
                 .build();
         try {
-            String insertResult = reviewService.reviewInsert(reviewVO, file);
+            Mono<String> insertResult = reviewService.reviewInsert(reviewVO, file);
             Map<String, Object> result = new HashMap<>();
             result.put("message", insertResult);
             result.put("status", true);
