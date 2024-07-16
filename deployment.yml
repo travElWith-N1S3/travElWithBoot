@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-deployment
+  labels:
+    app: travel-with
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: travel-with
+  template:
+    metadata:
+      labels:
+        app: travel-with
+    spec:
+      containers:
+        - name: travel-with
+          image: 992382591529.dkr.ecr.us-west-2.amazonaws.com/travel-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: ""
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10

@@ -13,6 +13,8 @@
     </annotationProcessing>
     <bytecodeTargetLevel target="17">
       <module name="tour" target="17" />
+      <module name="tour.main" target="17" />
+      <module name="tour.test" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>

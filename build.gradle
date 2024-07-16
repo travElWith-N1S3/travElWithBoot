@@ -38,12 +38,24 @@ dependencies {
 	implementation(platform("software.amazon.awssdk:bom:2.21.1"))
 	implementation group: 'software.amazon.awssdk', name: 'bedrockruntime', version: '2.26.12'
 	implementation("software.amazon.awssdk:bedrock")
+
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-actuator
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: '3.3.1'
+// https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-sqs
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-sqs', version: '1.12.760'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'software.amazon.awssdk:netty-nio-client:2.20.3'
 // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-webflux', version: '3.3.1'
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis:2.5.4'
+
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+	implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
+
+
 
 	// MariaDB
 	implementation 'org.mariadb.jdbc:mariadb-java-client:2.2.0'

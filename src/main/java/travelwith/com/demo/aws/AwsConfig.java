@@ -1,5 +1,9 @@
 package travelwith.com.demo.aws;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +27,24 @@ public class AwsConfig {
     @Bean
     public Gson gson (){
         return new Gson();
+    }
+
+    @Bean
+    public JsonParser jsonParser(){
+        return new JsonParser();
+    }
+
+
+    @Bean
+    public AmazonSQS amazonSQS(){
+        BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+
+        // Create SQS client
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.standard()
+                .withRegion("us-west-2") // Replace with your desired region
+                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+                .build();
+        return sqsClient;
     }
 
     @Bean
