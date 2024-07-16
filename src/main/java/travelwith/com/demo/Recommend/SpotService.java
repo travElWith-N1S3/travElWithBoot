@@ -2,6 +2,7 @@ package travelwith.com.demo.Recommend;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,8 +18,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SpotService {
-    private final SpotRepository spotRepository;
-    private final RedisTemplate<String, String> redisStrTemplate;
+	private final SpotRepository spotRepository;
+	private final RedisTemplate<String, String> redisStrTemplate;
 
     @PostConstruct
     public void addDummyData() {
@@ -56,11 +57,13 @@ public class SpotService {
         return spotDtos;
     }
 
-    public List<SpotDto> findTop3Spot() {
-        return spotRepository.findFirst3ByOrderByIdDesc()
-                .stream().map(SpotDto::new)
-                .collect(Collectors.toList());
+    public Page<SpotDto> findAllPage(String query, Pageable pageable) {
+        return spotRepository.findByTitleContainingOrContentsContaining(query, query, pageable)
+                .map(SpotDto::new);
     }
 
+	public List<SpotDto> findTop3Spot() {
+		return spotRepository.findFirst3ByOrderByIdDesc().stream().map(SpotDto::new).collect(Collectors.toList());
+	}
 
 }
