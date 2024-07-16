@@ -53,8 +53,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
 
-
-
 	// MariaDB
 	implementation 'org.mariadb.jdbc:mariadb-java-client:2.2.0'
 	
@@ -78,8 +76,11 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
-    
     implementation 'mysql:mysql-connector-java:8.0.29'
+}
+
+configurations.all {
+	exclude group: 'commons-logging', module: 'commons-logging'
 }
 
 tasks.named('test') {
