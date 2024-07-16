@@ -132,10 +132,9 @@ public class ChatBotService {
         ResponseCookie token = ResponseCookie.from("ask_token", uuid.toString())
                 .path("/")
                 .maxAge(Duration.ofHours(12))
-                .sameSite("None")
-                .secure(false)
+                .secure(false) // secure를 false로 설정하여 HTTP에서도 사용 가능하게 설정
+                .sameSite("Lax")
                 .httpOnly(false) // JavaScript에서 접근 가능하게 설정
-//                .domain(".us-west-2.elb.amazonaws.com") // 클라이언트의 도메인으로 설정
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, token.toString());
     }
