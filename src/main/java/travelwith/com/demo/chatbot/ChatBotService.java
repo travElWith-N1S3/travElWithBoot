@@ -135,7 +135,7 @@ public class ChatBotService {
                 .sameSite("None")
                 .secure(true)
                 .httpOnly(false) // JavaScript에서 접근 가능하게 설정
-//                .domain("localhost") // 클라이언트의 도메인으로 설정
+                .domain(".us-west-2.elb.amazonaws.com") // 클라이언트의 도메인으로 설정
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, token.toString());
     }
