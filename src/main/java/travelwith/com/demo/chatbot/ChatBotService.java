@@ -46,7 +46,7 @@ public class ChatBotService {
     @Value("${bedrock.aws_secret_access_key}")
     private String secretKey;
     private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
-    private String queueName = "test-queue";
+    private String queueName = "travelwith-chatbot-queue";
 
     @Async()
     public CompletableFuture<String> chatWithBedrock(String token, ChatBotPrompt prompt) {
@@ -84,13 +84,9 @@ public class ChatBotService {
     public void saveNewCookie(String cookie) {
         redisStrTemplate.opsForZSet().add("cookies", cookie, 0);
         redisStrTemplate.expire("cookies", 12, TimeUnit.HOURS);
-        System.out.println(redisStrTemplate.opsForZSet().score("cookies", cookie));
-        System.out.println(redisStrTemplate.opsForZSet().reverseRangeByScore("cookies", 0, 100));
     }
 
     public Double getAskCount(String coookie) {
-        System.out.println(coookie);
-        System.out.println(redisStrTemplate.opsForZSet().score("cookies", coookie));
         return redisStrTemplate.opsForZSet().score("cookies", coookie);
     }
 
@@ -154,34 +150,34 @@ public class ChatBotService {
         List<Message> messages = receiveMessageResult.getMessages();
 
         for (Message message : messages) {
-//            Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
-            JsonParser jsonParser = new JsonParser();
-            JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
+//            System.out.println(message.getBody());
+            Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
+//            JsonParser jsonParser = new JsonParser();
+//            JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
 //            JsonObject body = (JsonObject) object.get("body");
 //            System.out.println(body);
 //            System.out.println(body.get("s_id"));
 
 
-            answer = message.getBody();
+//            answer = message.getBody();
 //            System.out.println(getMessage(answer, "s_id"));
 //            System.out.println(getMessage(answer, "p_text"));
 
-//            String messageId= messageAttributes.get("cookie_id").getStringValue();
+            String messageId= messageAttributes.get("s_id").getStringValue();
 //            Gson body = new Gson();
 //            body.toJson(message.getBody());
 //            System.out.println(body.);
 
-//            if(messageId == null){
-//                continue;
-//            }
-//
-//            if(messageId.equals(cookieId)){
-//                answer = message.getBody();
+            if(messageId == null){
+                continue;
+            }
+            if(messageId.equals(cookieId)){
+                answer = message.getBody();
 //                System.out.println(answer);
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
-//                break;
-//            }
+                break;
+            }
         }
         return answer;
     }
