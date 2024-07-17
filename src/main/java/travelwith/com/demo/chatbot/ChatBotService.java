@@ -138,7 +138,6 @@ public class ChatBotService {
     public String pullingSQSMessage(String cookieId) {
 
         String queueUrl = getOrCreateQueueUrl(amazonSQS, queueName);
-        String answer = "";
         String aiAnswer ="";
 
         // Receive messages from the queue
@@ -154,18 +153,16 @@ public class ChatBotService {
             Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
             JsonParser jsonParser = new JsonParser();
 
-
             String messageId= messageAttributes.get("s_id").getStringValue();
 
             if(messageId == null){
                 continue;
             }
 
-
             if(messageId.equals(cookieId)){
                 JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
                 JsonObject body = (JsonObject) object.get("body");
-                aiAnswer = body.get("p_text").toString();
+                aiAnswer = body.get("p_text").toString().replace("\"","");
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
                 break;
@@ -174,39 +171,6 @@ public class ChatBotService {
         return aiAnswer;
     }
 
-    public static String getMessage(String message, String param) {
-        try {
-            // JSON 파싱을 위한 ObjectMapper 생성
-            ObjectMapper objectMapper = new ObjectMapper();
-            // 주어진 JSON 문자열에서 "body"의 값을 파싱
-            JsonNode jsonNode = objectMapper.readTree(message).get("body");
-            // "body"의 값에서 "p_text"의 값을 추출
-            String pTextValue = jsonNode.get(param).asText();
-            // 유니코드 해석 및 반환
-            return decodeUnicode(pTextValue);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // 유니코드 이스케이프 문자열 해석하기
-    private static String decodeUnicode(String encodedText) {
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        while (i < encodedText.length()) {
-            if (encodedText.charAt(i) == '\\' && i + 1 < encodedText.length() && encodedText.charAt(i + 1) == 'u') {
-                String unicode = encodedText.substring(i + 2, i + 6);
-                char character = (char) Integer.parseInt(unicode, 16);
-                sb.append(character);
-                i += 6; // 유니코드 문자는 '\\u' 뒤에 4자리이므로 6을 더함
-            } else {
-                sb.append(encodedText.charAt(i));
-                i++;
-            }
-        }
-        return sb.toString();
-    }
 
     private static String getOrCreateQueueUrl(AmazonSQS sqsClient, String queueName) {
         ListQueuesResult listQueuesResult = sqsClient.listQueues(queueName);
