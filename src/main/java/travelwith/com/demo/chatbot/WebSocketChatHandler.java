@@ -1,7 +1,6 @@
 package travelwith.com.demo.chatbot;
 
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
@@ -50,10 +49,15 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
         String answer = "";
         Double askCount = 0d;
 
+        System.out.println(message.getPayload());
+
         JsonObject parse = (JsonObject) jsonParser.parse(message.getPayload());
         String id = parse.get("id").toString().replaceAll("\"","")
                 .replaceAll("\"","");
         String prompt = parse.get("text").toString();
+        log.info(prompt);
+
+        System.out.println();
 
         try {// askTokenStorage 에 저장된 쿠키값인지 확인
             askCount = chatBotService.getAskCount(id);
@@ -94,6 +98,7 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
             answer = chatBotService.pullingSQSMessage(id);
             if(!answer.isEmpty()) break;
         }
+        System.out.println(answer);
         JsonObject parsed = (JsonObject) jsonParser.parse(answer);
         JsonObject body =(JsonObject)parsed.get("body");
         answer = body.get("p_text").toString();

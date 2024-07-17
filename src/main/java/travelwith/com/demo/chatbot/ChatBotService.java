@@ -152,14 +152,13 @@ public class ChatBotService {
         for (Message message : messages) {
 //            System.out.println(message.getBody());
             Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
-//            JsonParser jsonParser = new JsonParser();
-//            JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
-//            JsonObject body = (JsonObject) object.get("body");
+            JsonParser jsonParser = new JsonParser();
+            JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
 //            System.out.println(body);
 //            System.out.println(body.get("s_id"));
 
 
-//            answer = message.getBody();
+            answer = message.getBody();
 //            System.out.println(getMessage(answer, "s_id"));
 //            System.out.println(getMessage(answer, "p_text"));
 
@@ -172,7 +171,8 @@ public class ChatBotService {
                 continue;
             }
             if(messageId.equals(cookieId)){
-                answer = message.getBody().replaceAll("\"","");
+                answer = getMessage(answer, "p_text");
+//                answer = message.getBody().replaceAll("\"","");
 //                System.out.println(answer);
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
