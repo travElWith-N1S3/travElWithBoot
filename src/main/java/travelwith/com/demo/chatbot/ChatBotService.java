@@ -139,6 +139,7 @@ public class ChatBotService {
 
         String queueUrl = getOrCreateQueueUrl(amazonSQS, queueName);
         String answer = "";
+        String aiAnswer ="";
 
         // Receive messages from the queue
         ReceiveMessageRequest receiveRequest = new ReceiveMessageRequest(queueUrl)
@@ -150,36 +151,27 @@ public class ChatBotService {
         List<Message> messages = receiveMessageResult.getMessages();
 
         for (Message message : messages) {
-//            System.out.println(message.getBody());
             Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
             JsonParser jsonParser = new JsonParser();
-            JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
-//            System.out.println(body);
-//            System.out.println(body.get("s_id"));
 
-
-            answer = message.getBody();
-//            System.out.println(getMessage(answer, "s_id"));
-//            System.out.println(getMessage(answer, "p_text"));
 
             String messageId= messageAttributes.get("s_id").getStringValue();
-//            Gson body = new Gson();
-//            body.toJson(message.getBody());
-//            System.out.println(body.);
 
             if(messageId == null){
                 continue;
             }
+
+
             if(messageId.equals(cookieId)){
-                answer = getMessage(answer, "p_text");
-//                answer = message.getBody().replaceAll("\"","");
-//                System.out.println(answer);
+                JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
+                JsonObject body = (JsonObject) object.get("body");
+                aiAnswer = body.get("p_text").toString();
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
                 break;
             }
         }
-        return answer;
+        return aiAnswer;
     }
 
     public static String getMessage(String message, String param) {

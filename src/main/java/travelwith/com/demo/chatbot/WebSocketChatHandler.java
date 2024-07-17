@@ -98,10 +98,6 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
             answer = chatBotService.pullingSQSMessage(id);
             if(!answer.isEmpty()) break;
         }
-        System.out.println(answer);
-        JsonObject parsed = (JsonObject) jsonParser.parse(answer);
-        JsonObject body =(JsonObject)parsed.get("body");
-        answer = body.get("p_text").toString();
         ConversationLog conversationLog = new ConversationLog(id, LocalDateTime.now().toString(), prompt, answer);
         chatBotService.saveConversation(id, conversationLog);
         session.sendMessage(new TextMessage(answer));
