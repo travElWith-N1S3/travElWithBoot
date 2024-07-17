@@ -172,7 +172,7 @@ public class ChatBotService {
                 continue;
             }
             if(messageId.equals(cookieId)){
-                answer = message.getBody();
+                answer = message.getBody().replaceAll("\"","");
 //                System.out.println(answer);
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
