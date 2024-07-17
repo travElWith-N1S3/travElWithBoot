@@ -12,9 +12,9 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 
@@ -93,11 +93,18 @@ public class WebSocketChatHandler extends TextWebSocketHandler {
         // 챗봇 질문시 lock 잠그기
         log.info("잠김");
         lockSet.add(id);
+        Date now = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        String formattedDate = dateFormat.format(now);
+        System.out.println(formattedDate);
         chatBotService.chatWithBedrock(id, chatBotPrompt);
         while (true){
-            answer = chatBotService.pullingSQSMessage(id);
+            answer = chatBotService.getAnswerFormDdb(id, formattedDate);
             if(!answer.isEmpty()) break;
         }
+        System.out.println("결과");
+        System.out.println(answer);
         ConversationLog conversationLog = new ConversationLog(id, LocalDateTime.now().toString(), prompt, answer);
         chatBotService.saveConversation(id, conversationLog);
         session.sendMessage(new TextMessage(answer));

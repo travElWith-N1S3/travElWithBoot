@@ -1,13 +1,14 @@
 package travelwith.com.demo.chatbot;
 
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.*;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import io.micrometer.core.instrument.util.StringEscapeUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -47,6 +46,8 @@ public class ChatBotService {
     private String secretKey;
     private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
     private String queueName = "travelwith-chatbot-queue";
+    private final String tableName = "travelwith-chatbot-db";
+    private final DynamoDB dynamoDB;
 
     @Async()
     public CompletableFuture<String> chatWithBedrock(String token, ChatBotPrompt prompt) {
@@ -138,7 +139,7 @@ public class ChatBotService {
     public String pullingSQSMessage(String cookieId) {
 
         String queueUrl = getOrCreateQueueUrl(amazonSQS, queueName);
-        String aiAnswer ="";
+        String aiAnswer = "";
 
         // Receive messages from the queue
         ReceiveMessageRequest receiveRequest = new ReceiveMessageRequest(queueUrl)
@@ -153,22 +154,50 @@ public class ChatBotService {
             Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
             JsonParser jsonParser = new JsonParser();
 
-            String messageId= messageAttributes.get("s_id").getStringValue();
+            String messageId = messageAttributes.get("s_id").getStringValue();
 
-            if(messageId == null){
+            if (messageId == null) {
                 continue;
             }
 
-            if(messageId.equals(cookieId)){
+            if (messageId.equals(cookieId)) {
                 JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
                 JsonObject body = (JsonObject) object.get("body");
-                aiAnswer = body.get("p_text").toString().replace("\"","");
+                aiAnswer = body.get("p_text").toString().replace("\"", "");
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
                 break;
             }
         }
         return aiAnswer;
+    }
+
+    public String getAnswerFormDdb(String s_id, String c_date) {
+        List<String> pTextList = new ArrayList<>();
+
+        Table table = dynamoDB.getTable(tableName);
+
+        String pText = "";
+        QuerySpec spec = new QuerySpec()
+                .withKeyConditionExpression("s_id = :v_s_id and #date > :v_date")
+                .withNameMap(new HashMap() {{
+                    put("#date", "date");
+                }})
+                .withValueMap(new ValueMap()
+                        .withString(":v_s_id", s_id)
+                        .withString(":v_date", c_date));
+        try {
+            ItemCollection<QueryOutcome> items = table.query(spec);
+            for (Item item : items) {
+                pText = item.getString("p_text");
+                pTextList.add(pText);
+            }
+
+        } catch (Exception e) {
+            // 로깅 프레임워크를 사용하는 것이 좋습니다. 예: log.error("Unable to query items", e);
+            System.err.println("Unable to query items: " + e.getMessage());
+        }
+        return pText;
     }
 
 

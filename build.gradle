@@ -69,7 +69,11 @@ dependencies {
 	
 	// WebClient with AuthFunction support
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	
+
+	// https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-dynamodb
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.12.761'
+
+
 	// Iamport
 	implementation 'com.github.iamport:iamport-rest-client-java:0.2.22'
     implementation 'com.squareup.retrofit2:adapter-rxjava2:2.9.0'

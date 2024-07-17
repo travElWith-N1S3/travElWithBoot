@@ -1,7 +1,12 @@
 package travelwith.com.demo.aws;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.gson.Gson;
@@ -47,6 +52,17 @@ public class AwsConfig {
         return sqsClient;
     }
 
+    @Bean
+    public DynamoDB dynamoDB(){
+        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+        AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
+
+
+        return new DynamoDB(AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(awsCredentialsProvider)
+                .withRegion(Regions.US_WEST_2)
+                .build());
+    }
     @Bean
     public BedrockRuntimeAsyncClient bedrockRuntimeAsyncClient() {
         AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(accessKey, secretKey);
