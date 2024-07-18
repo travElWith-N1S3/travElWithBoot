@@ -52,10 +52,6 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
-	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-	implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
-
-
 
 	// MariaDB
 	implementation 'org.mariadb.jdbc:mariadb-java-client:2.2.0'
@@ -73,15 +69,22 @@ dependencies {
 	
 	// WebClient with AuthFunction support
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	
+
+	// https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-dynamodb
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.12.761'
+
+
 	// Iamport
 	implementation 'com.github.iamport:iamport-rest-client-java:0.2.22'
     implementation 'com.squareup.retrofit2:adapter-rxjava2:2.9.0'
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
-    
     implementation 'mysql:mysql-connector-java:8.0.29'
+}
+
+configurations.all {
+	exclude group: 'commons-logging', module: 'commons-logging'
 }
 
 tasks.named('test') {

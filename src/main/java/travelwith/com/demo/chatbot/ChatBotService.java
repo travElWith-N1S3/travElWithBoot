@@ -1,13 +1,14 @@
 package travelwith.com.demo.chatbot;
 
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.*;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import io.micrometer.core.instrument.util.StringEscapeUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +45,9 @@ public class ChatBotService {
     @Value("${bedrock.aws_secret_access_key}")
     private String secretKey;
     private String apiGatewayUrl = "https://wrrvutyink.execute-api.us-west-2.amazonaws.com/dev/prompt";
-    private String queueName = "test-queue";
+    private String queueName = "travelwith-chatbot-queue";
+    private final String tableName = "travelwith-chatbot-db";
+    private final DynamoDB dynamoDB;
 
     @Async()
     public CompletableFuture<String> chatWithBedrock(String token, ChatBotPrompt prompt) {
@@ -84,13 +85,9 @@ public class ChatBotService {
     public void saveNewCookie(String cookie) {
         redisStrTemplate.opsForZSet().add("cookies", cookie, 0);
         redisStrTemplate.expire("cookies", 12, TimeUnit.HOURS);
-        System.out.println(redisStrTemplate.opsForZSet().score("cookies", cookie));
-        System.out.println(redisStrTemplate.opsForZSet().reverseRangeByScore("cookies", 0, 100));
     }
 
     public Double getAskCount(String coookie) {
-        System.out.println(coookie);
-        System.out.println(redisStrTemplate.opsForZSet().score("cookies", coookie));
         return redisStrTemplate.opsForZSet().score("cookies", coookie);
     }
 
@@ -132,10 +129,9 @@ public class ChatBotService {
         ResponseCookie token = ResponseCookie.from("ask_token", uuid.toString())
                 .path("/")
                 .maxAge(Duration.ofHours(12))
-                .sameSite("None")
-                .secure(true)
+                .secure(false) // secure를 false로 설정하여 HTTP에서도 사용 가능하게 설정
+                .sameSite("Lax")
                 .httpOnly(false) // JavaScript에서 접근 가능하게 설정
-//                .domain("localhost") // 클라이언트의 도메인으로 설정
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, token.toString());
     }
@@ -143,7 +139,7 @@ public class ChatBotService {
     public String pullingSQSMessage(String cookieId) {
 
         String queueUrl = getOrCreateQueueUrl(amazonSQS, queueName);
-        String answer = "";
+        String aiAnswer = "";
 
         // Receive messages from the queue
         ReceiveMessageRequest receiveRequest = new ReceiveMessageRequest(queueUrl)
@@ -155,71 +151,55 @@ public class ChatBotService {
         List<Message> messages = receiveMessageResult.getMessages();
 
         for (Message message : messages) {
-//            Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
+            Map<String, MessageAttributeValue> messageAttributes = message.getMessageAttributes();
             JsonParser jsonParser = new JsonParser();
-            JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
-//            JsonObject body = (JsonObject) object.get("body");
-//            System.out.println(body);
-//            System.out.println(body.get("s_id"));
 
+            String messageId = messageAttributes.get("s_id").getStringValue();
 
-            answer = message.getBody();
-//            System.out.println(getMessage(answer, "s_id"));
-//            System.out.println(getMessage(answer, "p_text"));
+            if (messageId == null) {
+                continue;
+            }
 
-//            String messageId= messageAttributes.get("cookie_id").getStringValue();
-//            Gson body = new Gson();
-//            body.toJson(message.getBody());
-//            System.out.println(body.);
-
-//            if(messageId == null){
-//                continue;
-//            }
-//
-//            if(messageId.equals(cookieId)){
-//                answer = message.getBody();
-//                System.out.println(answer);
+            if (messageId.equals(cookieId)) {
+                JsonObject object = (JsonObject) jsonParser.parse(message.getBody());
+                JsonObject body = (JsonObject) object.get("body");
+                aiAnswer = body.get("p_text").toString().replace("\"", "");
                 DeleteMessageRequest deleteRequest = new DeleteMessageRequest(queueUrl, message.getReceiptHandle());
                 amazonSQS.deleteMessage(deleteRequest);
-//                break;
-//            }
-        }
-        return answer;
-    }
-
-    public static String getMessage(String message, String param) {
-        try {
-            // JSON 파싱을 위한 ObjectMapper 생성
-            ObjectMapper objectMapper = new ObjectMapper();
-            // 주어진 JSON 문자열에서 "body"의 값을 파싱
-            JsonNode jsonNode = objectMapper.readTree(message).get("body");
-            // "body"의 값에서 "p_text"의 값을 추출
-            String pTextValue = jsonNode.get(param).asText();
-            // 유니코드 해석 및 반환
-            return decodeUnicode(pTextValue);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // 유니코드 이스케이프 문자열 해석하기
-    private static String decodeUnicode(String encodedText) {
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        while (i < encodedText.length()) {
-            if (encodedText.charAt(i) == '\\' && i + 1 < encodedText.length() && encodedText.charAt(i + 1) == 'u') {
-                String unicode = encodedText.substring(i + 2, i + 6);
-                char character = (char) Integer.parseInt(unicode, 16);
-                sb.append(character);
-                i += 6; // 유니코드 문자는 '\\u' 뒤에 4자리이므로 6을 더함
-            } else {
-                sb.append(encodedText.charAt(i));
-                i++;
+                break;
             }
         }
-        return sb.toString();
+        return aiAnswer;
     }
+
+    public String getAnswerFormDdb(String s_id, String c_date) {
+        List<String> pTextList = new ArrayList<>();
+
+        Table table = dynamoDB.getTable(tableName);
+
+        String pText = "";
+        QuerySpec spec = new QuerySpec()
+                .withKeyConditionExpression("s_id = :v_s_id and #date > :v_date")
+                .withNameMap(new HashMap() {{
+                    put("#date", "date");
+                }})
+                .withValueMap(new ValueMap()
+                        .withString(":v_s_id", s_id)
+                        .withString(":v_date", c_date));
+        try {
+            ItemCollection<QueryOutcome> items = table.query(spec);
+            for (Item item : items) {
+                pText = item.getString("p_text");
+                pTextList.add(pText);
+            }
+
+        } catch (Exception e) {
+            // 로깅 프레임워크를 사용하는 것이 좋습니다. 예: log.error("Unable to query items", e);
+            System.err.println("Unable to query items: " + e.getMessage());
+        }
+        return pText;
+    }
+
 
     private static String getOrCreateQueueUrl(AmazonSQS sqsClient, String queueName) {
         ListQueuesResult listQueuesResult = sqsClient.listQueues(queueName);

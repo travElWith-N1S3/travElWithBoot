@@ -50,7 +50,6 @@ public class ReviewController {
         try {
         	CompletableFuture<String> insertResult = reviewService.reviewInsert(reviewVO, file);
         	Map<String, Object> result = new HashMap<>();
-            System.out.println(insertResult);
             result.put("message", insertResult);
             result.put("status", true);
             return ResponseEntity.ok(result);
