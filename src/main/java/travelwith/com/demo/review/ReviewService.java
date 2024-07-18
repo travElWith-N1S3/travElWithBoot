@@ -16,6 +16,7 @@ import travelwith.com.demo.image.ImageService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -63,7 +64,7 @@ public class ReviewService {
     }
 
     @Transactional(timeout = 60)
-    public Mono<String> reviewInsert(ReviewVO reviewVO, MultipartFile file) throws IOException {
+    public CompletableFuture<String> reviewInsert(ReviewVO reviewVO, MultipartFile file) throws IOException {
         reviewRepository.save(reviewVO);
 
         if (file != null && !file.isEmpty()) {
@@ -82,12 +83,15 @@ public class ReviewService {
                 .baseUrl(apiGatewayUrl)
                 .build();
 
-        return client.post()
+        Mono<String> stringMono = client.post()
                 .body(BodyInserters.fromValue(new ReviewPayload(title, rank, body)))
                 .retrieve()
-                .bodyToMono(String.class)
-                .doOnError(ex -> ex.printStackTrace())
-                .onErrorReturn("An error occurred while inserting the review.");
+                .bodyToMono(String.class);
+
+        return stringMono.toFuture().exceptionally(ex -> {
+            ex.printStackTrace();
+            return "An error occurred while inserting the review.";
+        });
     }
 
     public List<ReviewVO> reviewList() {

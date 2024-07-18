@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Mono;
 import travelwith.com.demo.image.ImageService;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,8 +48,9 @@ public class ReviewController {
         ReviewVO reviewVO = ReviewVO.builder().twReviewTitle(title).twReviewContent(content).twReviewRating(rating)
                 .build();
         try {
-            Mono<String> insertResult = reviewService.reviewInsert(reviewVO, file);
-            Map<String, Object> result = new HashMap<>();
+        	CompletableFuture<String> insertResult = reviewService.reviewInsert(reviewVO, file);
+        	Map<String, Object> result = new HashMap<>();
+            System.out.println(insertResult);
             result.put("message", insertResult);
             result.put("status", true);
             return ResponseEntity.ok(result);
