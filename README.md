@@ -2,7 +2,7 @@
 AI 를 이용한 국내 여행지 추천 서비스   
 
 <H3>완료 보고서</H3>
-[링크](https://github.com/travElWith-N1S3/travElWithBoot/blob/main/%EC%99%84%EB%A3%8C%20%EB%B3%B4%EA%B3%A0%EC%84%9C.pptx)
+[링크](https://github.com/travElWith-N1S3/travElWithBoot/blob/main/%EC%99%84%EB%A3%8C%20%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf)
 
 <h3>챗봇 시연 동영상</h3>
 
